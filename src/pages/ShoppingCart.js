@@ -24,7 +24,7 @@ const ShoppingCart = ({ cart, updateCartItemDuration, removeFromCart }) => {
       <div className="row">
         <div className="col-md-8">
           {cart.map(item => (
-            <div key={item.id} className="cart-item">
+            <div key={item.cartItemId} className="cart-item card mb-3 p-3"> {/* CHANGED: key={item.cartItemId} */}
               <div className="row">
                 <div className="col-md-3">
                   <img src={item.image} alt={item.name} className="img-fluid rounded" />
@@ -41,11 +41,11 @@ const ShoppingCart = ({ cart, updateCartItemDuration, removeFromCart }) => {
                 </div>
                 <div className="col-md-3">
                   <div className="mb-3">
-                    <label htmlFor={`duration-${item.id}`} className="form-label">Days</label>
+                    <label htmlFor={`duration-${item.cartItemId}`} className="form-label">Days</label> {/* CHANGED: id uses cartItemId */}
                     <input 
                       type="number" 
                       className="form-control" 
-                      id={`duration-${item.id}`}
+                      id={`duration-${item.cartItemId}`}
                       min="1" 
                       max="30" 
                       value={item.rentalDuration}
@@ -68,7 +68,7 @@ const ShoppingCart = ({ cart, updateCartItemDuration, removeFromCart }) => {
         </div>
 
         <div className="col-md-4">
-          <div className="cart-summary">
+          <div className="cart-summary card p-3">
             <h4>Order Summary</h4>
             <div className="d-flex justify-content-between mb-2">
               <span>Subtotal:</span>

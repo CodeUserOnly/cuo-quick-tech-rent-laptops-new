@@ -95,6 +95,7 @@ const CheckoutPage = ({ cart, user, createOrder, clearCart }) => {
                       name="fullName"
                       value={deliveryAddress.fullName}
                       onChange={handleInputChange}
+                      placeholder="Enter full name"
                       required 
                     />
                   </div>
@@ -106,6 +107,7 @@ const CheckoutPage = ({ cart, user, createOrder, clearCart }) => {
                       name="phone"
                       value={deliveryAddress.phone}
                       onChange={handleInputChange}
+                      placeholder="Enter phone number"
                       required 
                     />
                   </div>
@@ -118,6 +120,7 @@ const CheckoutPage = ({ cart, user, createOrder, clearCart }) => {
                     name="address"
                     value={deliveryAddress.address}
                     onChange={handleInputChange}
+                    placeholder="Enter full address"
                     required 
                   />
                 </div>
@@ -130,6 +133,7 @@ const CheckoutPage = ({ cart, user, createOrder, clearCart }) => {
                       name="city"
                       value={deliveryAddress.city}
                       onChange={handleInputChange}
+                      placeholder="Enter city name"
                       required 
                     />
                   </div>
@@ -141,6 +145,7 @@ const CheckoutPage = ({ cart, user, createOrder, clearCart }) => {
                       name="state"
                       value={deliveryAddress.state}
                       onChange={handleInputChange}
+                      placeholder="Enter state name"
                       required 
                     />
                   </div>
@@ -152,6 +157,7 @@ const CheckoutPage = ({ cart, user, createOrder, clearCart }) => {
                       name="zipCode"
                       value={deliveryAddress.zipCode}
                       onChange={handleInputChange}
+                      placeholder="Enter zip code"
                       required 
                     />
                   </div>
@@ -226,7 +232,7 @@ const CheckoutPage = ({ cart, user, createOrder, clearCart }) => {
             </div>
             <div className="card-body">
               {cart.map(item => (
-                <div key={item.id} className="d-flex justify-content-between align-items-center mb-2">
+                <div key={item.cartItemId} className="d-flex justify-content-between align-items-center mb-2"> {/* CHANGED: key={item.cartItemId} */}
                   <div>
                     <h6>{item.name}</h6>
                     <small>{item.rentalDuration} days × ₹{item.price}/day</small>

@@ -1,40 +1,40 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { usersService } from '../services/supabase';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { usersService } from "../services/supabase";
 
 const UserLogin = ({ loginUser }) => {
   const [formData, setFormData] = useState({
-    email: '',
-    password: ''
+    email: "",
+    password: "",
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
 
     try {
       const user = await usersService.login(formData.email, formData.password);
-      
+
       if (user) {
         loginUser(user);
-        navigate('/');
+        navigate("/");
       } else {
-        setError('Invalid email or password');
+        setError("Invalid email or password");
       }
     } catch (error) {
-      setError('Login failed. Please try again.');
+      setError("Login failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -47,46 +47,53 @@ const UserLogin = ({ loginUser }) => {
           <div className="card">
             <div className="card-body">
               <h2 className="text-center mb-4">Login</h2>
-              
-              {error && (
-                <div className="alert alert-danger">{error}</div>
-              )}
+
+              {error && <div className="alert alert-danger">{error}</div>}
 
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
                   <label className="form-label">Email</label>
-                  <input 
-                    type="email" 
-                    className="form-control" 
+                  <input
+                    type="email"
+                    className="form-control"
                     value={formData.email}
                     onChange={handleChange}
                     name="email"
-                    required 
+                    placeholder="Enter email address"
+                    required
                   />
                 </div>
                 <div className="mb-3">
                   <label className="form-label">Password</label>
-                  <input 
-                    type="password" 
-                    className="form-control" 
+                  <input
+                    type="password"
+                    className="form-control"
                     value={formData.password}
                     onChange={handleChange}
                     name="password"
-                    required 
+                    placeholder="Enter password"
+                    required
                   />
                 </div>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="btn btn-primary w-100"
                   disabled={loading}
                 >
-                  {loading ? 'Logging in...' : 'Login'}
+                  {loading ? "Logging in..." : "Login"}
                 </button>
               </form>
 
+              <hr className="my-4" />
+
               <div className="text-center mt-3">
-                <p>Test Account: user@demo.com / password</p>
-                <Link to="/signup">Create new account</Link>
+                <p>
+                  Create a new user account here:{" "}
+                  <Link to="/signup">User Signup</Link>
+                </p>
+                <p>
+                  Are you a admin? <Link to="/admin/login">Admin Login</Link>
+                </p>
               </div>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const SupportPage = () => {
   const [activeTab, setActiveTab] = useState('contact');
@@ -18,10 +18,13 @@ const SupportPage = () => {
     }
   ]);
   const [newMessage, setNewMessage] = useState('');
+  const [animatedCards, setAnimatedCards] = useState([]);
+  const chatContainerRef = useRef(null);
 
   const faqCategories = [
     {
       title: "Rental Process",
+      icon: "fas fa-shopping-cart",
       questions: [
         {
           question: "How long can I rent a laptop for?",
@@ -39,6 +42,7 @@ const SupportPage = () => {
     },
     {
       title: "Delivery & Return",
+      icon: "fas fa-shipping-fast",
       questions: [
         {
           question: "How fast is delivery?",
@@ -46,7 +50,7 @@ const SupportPage = () => {
         },
         {
           question: "What are your delivery areas?",
-          answer: "We currently deliver to major cities across the India. During checkout, you can enter your address to check availability in your area."
+          answer: "We currently deliver to major cities across India. During checkout, you can enter your address to check availability in your area."
         },
         {
           question: "How do I return the laptop?",
@@ -56,6 +60,7 @@ const SupportPage = () => {
     },
     {
       title: "Pricing & Payments",
+      icon: "fas fa-credit-card",
       questions: [
         {
           question: "What payment methods do you accept?",
@@ -73,6 +78,7 @@ const SupportPage = () => {
     },
     {
       title: "Technical Support",
+      icon: "fas fa-tools",
       questions: [
         {
           question: "What if the laptop has technical issues?",
@@ -89,6 +95,22 @@ const SupportPage = () => {
       ]
     }
   ];
+
+  useEffect(() => {
+    // Animate cards on load
+    const timer = setTimeout(() => {
+      setAnimatedCards([0, 1, 2]);
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    // Scroll to bottom of chat
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [chatMessages]);
 
   const handleContactSubmit = (e) => {
     e.preventDefault();
@@ -138,321 +160,393 @@ const SupportPage = () => {
           timestamp: new Date()
         };
         setChatMessages(prev => [...prev, autoReply]);
-      }, 2000);
+      }, 1500);
     }
+  };
+
+  const startChat = () => {
+    setShowChat(true);
+  };
+
+  // Inline styles for animations
+  const supportCardStyle = {
+    transition: 'all 0.3s ease'
+  };
+
+  const resourceCardStyle = {
+    transition: 'all 0.3s ease'
+  };
+
+  const contactItemStyle = {
+    transition: 'all 0.3s ease'
+  };
+
+  const tabContentStyle = {
+    animation: 'fadeIn 0.5s ease-in'
+  };
+
+  const messageTextStyle = {
+    lineHeight: '1.5'
   };
 
   return (
     <div className="container mt-4">
+      {/* Header Section */}
       <div className="row">
         <div className="col-md-12">
           <div className="text-center mb-5">
-            <h1>Support Center</h1>
-            <p className="lead">We're here to help you 24/7 with any questions or issues</p>
+            <h1 className="display-6 fw-semibold text-dark mb-3">Support Center</h1>
+            <p className="lead text-muted">We're here to help you 24/7 with any questions or issues</p>
           </div>
         </div>
       </div>
 
-      {/* Quick Help Cards */}
+      {/* Quick Help Cards with Animation */}
       <div className="row mb-5">
-        <div className="col-md-4 mb-3">
-          <div className="card text-center h-100 border-primary">
-            <div className="card-body">
-              <div className="text-primary mb-3">
-                <i className="fas fa-headset fa-2x"></i>
+        {[
+          {
+            icon: "fas fa-headset",
+            title: "24/7 Live Chat",
+            desc: "Get instant help from our support team",
+            buttonText: "Start Chat",
+            color: "primary",
+            action: startChat
+          },
+          {
+            icon: "fas fa-phone",
+            title: "Phone Support",
+            desc: "Speak directly with our experts",
+            buttonText: "Call Now",
+            color: "success",
+            action: () => window.open('tel:+919769602148')
+          },
+          {
+            icon: "fas fa-envelope",
+            title: "Email Support",
+            desc: "Get detailed responses within hours",
+            buttonText: "Email Us",
+            color: "info",
+            action: () => window.open('mailto:quicktechrent@gmail.com')
+          }
+        ].map((card, index) => (
+          <div key={index} className="col-md-4 mb-4">
+            <div 
+              className={`card text-center h-100 border-${card.color} shadow-sm support-card ${
+                animatedCards.includes(index) ? 'animate-in' : ''
+              }`}
+              style={{
+                transition: 'all 0.5s ease',
+                transform: animatedCards.includes(index) ? 'translateY(0)' : 'translateY(50px)',
+                opacity: animatedCards.includes(index) ? 1 : 0,
+                ...supportCardStyle
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-5px)';
+                e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = animatedCards.includes(index) ? 'translateY(0)' : 'translateY(50px)';
+                e.currentTarget.style.boxShadow = '';
+              }}
+            >
+              <div className="card-body p-4">
+                <div className={`text-${card.color} mb-3`}>
+                  <i className={`${card.icon} fa-3x`}></i>
+                </div>
+                <h5 className="card-title fw-semibold">{card.title}</h5>
+                <p className="card-text text-muted">{card.desc}</p>
+                <button 
+                  className={`btn btn-${card.color} px-4`}
+                  onClick={card.action}
+                >
+                  {card.buttonText}
+                </button>
               </div>
-              <h5>24/7 Live Chat</h5>
-              <p className="text-muted">Get instant help from our support team</p>
-              <button 
-                className="btn btn-primary"
-                onClick={() => setShowChat(true)}
-              >
-                Start Chat
-              </button>
             </div>
           </div>
-        </div>
-        <div className="col-md-4 mb-3">
-          <div className="card text-center h-100 border-success">
-            <div className="card-body">
-              <div className="text-success mb-3">
-                <i className="fas fa-phone fa-2x"></i>
-              </div>
-              <h5>Phone Support</h5>
-              <p className="text-muted">Speak directly with our experts</p>
-              <a href="tel:+919769602148" className="btn btn-success">
-                Call Now
-              </a>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-4 mb-3">
-          <div className="card text-center h-100 border-info">
-            <div className="card-body">
-              <div className="text-info mb-3">
-                <i className="fas fa-envelope fa-2x"></i>
-              </div>
-              <h5>Email Support</h5>
-              <p className="text-muted">Get detailed responses within hours</p>
-              <a href="mailto:quicktechrent@gmail.com" className="btn btn-info">
-                Email Us
-              </a>
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Navigation Tabs */}
       <div className="row">
         <div className="col-md-12">
-          <ul className="nav nav-tabs">
-            <li className="nav-item">
-              <button 
-                className={`nav-link ${activeTab === 'faq' ? 'active' : ''}`}
-                onClick={() => setActiveTab('faq')}
-              >
-                <i className="fas fa-question-circle me-2"></i>
-                FAQs
-              </button>
-            </li>
-            <li className="nav-item">
-              <button 
-                className={`nav-link ${activeTab === 'contact' ? 'active' : ''}`}
-                onClick={() => setActiveTab('contact')}
-              >
-                <i className="fas fa-envelope me-2"></i>
-                Contact Form
-              </button>
-            </li>
-            <li className="nav-item">
-              <button 
-                className={`nav-link ${activeTab === 'resources' ? 'active' : ''}`}
-                onClick={() => setActiveTab('resources')}
-              >
-                <i className="fas fa-book me-2"></i>
-                Resources
-              </button>
-            </li>
-          </ul>
+          <div className="card shadow-sm border-0">
+            <div className="card-header bg-white border-0 py-3">
+              <ul className="nav nav-pills nav-fill">
+                <li className="nav-item">
+                  <button 
+                    className={`nav-link ${activeTab === 'faq' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('faq')}
+                  >
+                    <i className="fas fa-question-circle me-2"></i>
+                    FAQs
+                  </button>
+                </li>
+                <li className="nav-item">
+                  <button 
+                    className={`nav-link ${activeTab === 'contact' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('contact')}
+                  >
+                    <i className="fas fa-envelope me-2"></i>
+                    Contact Form
+                  </button>
+                </li>
+                <li className="nav-item">
+                  <button 
+                    className={`nav-link ${activeTab === 'resources' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('resources')}
+                  >
+                    <i className="fas fa-book me-2"></i>
+                    Resources
+                  </button>
+                </li>
+              </ul>
+            </div>
 
-          <div className="tab-content mt-4">
-            {/* FAQ Tab */}
-            {activeTab === 'faq' && (
-              <div>
-                <h3 className="mb-4">Frequently Asked Questions</h3>
-                {faqCategories.map((category, categoryIndex) => (
-                  <div key={categoryIndex} className="mb-5">
-                    <h4 className="text-primary mb-3">{category.title}</h4>
-                    <div className="accordion" id={`accordion${categoryIndex}`}>
-                      {category.questions.map((faq, faqIndex) => (
-                        <div key={faqIndex} className="accordion-item">
-                          <h2 className="accordion-header">
-                            <button
-                              className="accordion-button collapsed"
-                              type="button"
-                              data-bs-toggle="collapse"
-                              data-bs-target={`#collapse${categoryIndex}${faqIndex}`}
+            <div className="card-body p-4">
+              {/* FAQ Tab */}
+              {activeTab === 'faq' && (
+                <div style={tabContentStyle}>
+                  <h3 className="mb-4 text-dark">Frequently Asked Questions</h3>
+                  {faqCategories.map((category, categoryIndex) => (
+                    <div key={categoryIndex} className="mb-4">
+                      <div className="d-flex align-items-center mb-3">
+                        <i className={`${category.icon} text-primary me-3 fa-lg`}></i>
+                        <h4 className="text-primary mb-0">{category.title}</h4>
+                      </div>
+                      <div className="accordion" id={`accordion${categoryIndex}`}>
+                        {category.questions.map((faq, faqIndex) => (
+                          <div key={faqIndex} className="accordion-item border-0 mb-2">
+                            <h2 className="accordion-header">
+                              <button
+                                className="accordion-button collapsed bg-light text-dark fw-semibold"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target={`#collapse${categoryIndex}${faqIndex}`}
+                                style={{borderRadius: '8px'}}
+                              >
+                                <i className="fas fa-question-circle text-primary me-2"></i>
+                                {faq.question}
+                              </button>
+                            </h2>
+                            <div
+                              id={`collapse${categoryIndex}${faqIndex}`}
+                              className="accordion-collapse collapse"
+                              data-bs-parent={`#accordion${categoryIndex}`}
                             >
-                              {faq.question}
-                            </button>
-                          </h2>
-                          <div
-                            id={`collapse${categoryIndex}${faqIndex}`}
-                            className="accordion-collapse collapse"
-                            data-bs-parent={`#accordion${categoryIndex}`}
-                          >
-                            <div className="accordion-body">
-                              {faq.answer}
+                              <div className="accordion-body bg-white text-muted">
+                                <i className="fas fa-info-circle text-success me-2"></i>
+                                {faq.answer}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
 
-            {/* Contact Form Tab */}
-            {activeTab === 'contact' && (
-              <div className="row justify-content-center">
-                <div className="col-md-8">
-                  <div className="card">
-                    <div className="card-body">
-                      <h3 className="mb-4">Contact Our Support Team</h3>
+              {/* Contact Form Tab */}
+              {activeTab === 'contact' && (
+                <div style={tabContentStyle}>
+                  <div className="row justify-content-center">
+                    <div className="col-lg-8">
+                      <div className="text-center mb-4">
+                        <h3 className="text-dark">Contact Our Support Team</h3>
+                        <p className="text-muted">We'll get back to you within 24 hours</p>
+                      </div>
                       <form onSubmit={handleContactSubmit}>
                         <div className="row">
                           <div className="col-md-6 mb-3">
-                            <label className="form-label">Full Name *</label>
+                            <label className="form-label fw-semibold">Full Name *</label>
                             <input
                               type="text"
-                              className="form-control"
+                              className="form-control form-control-lg"
                               name="name"
                               value={contactForm.name}
                               onChange={handleContactChange}
                               required
+                              placeholder="Enter your full name"
                             />
                           </div>
                           <div className="col-md-6 mb-3">
-                            <label className="form-label">Email *</label>
+                            <label className="form-label fw-semibold">Email *</label>
                             <input
                               type="email"
-                              className="form-control"
+                              className="form-control form-control-lg"
                               name="email"
                               value={contactForm.email}
                               onChange={handleContactChange}
                               required
+                              placeholder="Enter your email"
                             />
                           </div>
                         </div>
                         <div className="mb-3">
-                          <label className="form-label">Subject *</label>
+                          <label className="form-label fw-semibold">Subject *</label>
                           <input
                             type="text"
-                            className="form-control"
+                            className="form-control form-control-lg"
                             name="subject"
                             value={contactForm.subject}
                             onChange={handleContactChange}
                             required
+                            placeholder="Brief subject of your inquiry"
                           />
                         </div>
-                        <div className="mb-3">
-                          <label className="form-label">Message *</label>
+                        <div className="mb-4">
+                          <label className="form-label fw-semibold">Message *</label>
                           <textarea
                             className="form-control"
                             name="message"
-                            rows="6"
+                            rows="5"
                             value={contactForm.message}
                             onChange={handleContactChange}
                             placeholder="Please describe your issue or question in detail..."
                             required
+                            style={{resize: 'none'}}
                           ></textarea>
                         </div>
-                        <button type="submit" className="btn btn-primary btn-lg">
-                          Send Message
-                        </button>
+                        <div className="text-center">
+                          <button type="submit" className="btn btn-primary btn-lg px-5">
+                            <i className="fas fa-paper-plane me-2"></i>
+                            Send Message
+                          </button>
+                        </div>
                       </form>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Resources Tab */}
-            {activeTab === 'resources' && (
-              <div>
-                <h3 className="mb-4">Helpful Resources</h3>
-                <div className="row">
-                  <div className="col-md-6 mb-4">
-                    <div className="card h-100">
-                      <div className="card-body">
-                        <h5 className="card-title">
-                          <i className="fas fa-download text-primary me-2"></i>
-                          Setup Guides
-                        </h5>
-                        <p className="card-text">Step-by-step guides for setting up your rented laptop and software.</p>
-                        <div className="mt-3">
-                          <button className="btn btn-outline-primary btn-sm me-2">Windows Guide</button>
-                          <button className="btn btn-outline-primary btn-sm me-2">macOS Guide</button>
-                          <button className="btn btn-outline-primary btn-sm">Software Setup</button>
+              {/* Resources Tab */}
+              {activeTab === 'resources' && (
+                <div style={tabContentStyle}>
+                  <h3 className="mb-4 text-dark">Helpful Resources</h3>
+                  <div className="row">
+                    {[
+                      {
+                        icon: "fas fa-download",
+                        title: "Setup Guides",
+                        desc: "Step-by-step guides for setting up your rented laptop and software.",
+                        color: "primary",
+                        buttons: ["Windows Guide", "macOS Guide", "Software Setup"]
+                      },
+                      {
+                        icon: "fas fa-video",
+                        title: "Video Tutorials",
+                        desc: "Watch video tutorials for common tasks and troubleshooting.",
+                        color: "success",
+                        buttons: ["Getting Started", "Troubleshooting", "Advanced Features"]
+                      },
+                      {
+                        icon: "fas fa-file-alt",
+                        title: "Documentation",
+                        desc: "Comprehensive documentation for all our services and policies.",
+                        color: "info",
+                        buttons: ["Rental Policy", "Terms of Service", "Privacy Policy"]
+                      },
+                      {
+                        icon: "fas fa-tools",
+                        title: "Troubleshooting",
+                        desc: "Common issues and their solutions for quick problem resolution.",
+                        color: "warning",
+                        buttons: ["WiFi Issues", "Performance", "Software Problems"]
+                      }
+                    ].map((resource, index) => (
+                      <div key={index} className="col-md-6 mb-4">
+                        <div 
+                          className="card h-100 border-0 shadow-sm resource-card"
+                          style={resourceCardStyle}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-3px)';
+                            e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.1)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '';
+                          }}
+                        >
+                          <div className="card-body p-4">
+                            <div className="d-flex align-items-center mb-3">
+                              <i className={`${resource.icon} text-${resource.color} fa-2x me-3`}></i>
+                              <h5 className="card-title mb-0 fw-semibold">{resource.title}</h5>
+                            </div>
+                            <p className="card-text text-muted mb-3">{resource.desc}</p>
+                            <div className="d-flex flex-wrap gap-2">
+                              {resource.buttons.map((btn, btnIndex) => (
+                                <button 
+                                  key={btnIndex}
+                                  className={`btn btn-outline-${resource.color} btn-sm`}
+                                >
+                                  {btn}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                  <div className="col-md-6 mb-4">
-                    <div className="card h-100">
-                      <div className="card-body">
-                        <h5 className="card-title">
-                          <i className="fas fa-video text-success me-2"></i>
-                          Video Tutorials
-                        </h5>
-                        <p className="card-text">Watch video tutorials for common tasks and troubleshooting.</p>
-                        <div className="mt-3">
-                          <button className="btn btn-outline-success btn-sm me-2">Getting Started</button>
-                          <button className="btn btn-outline-success btn-sm me-2">Troubleshooting</button>
-                          <button className="btn btn-outline-success btn-sm">Advanced Features</button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="col-md-6 mb-4">
-                    <div className="card h-100">
-                      <div className="card-body">
-                        <h5 className="card-title">
-                          <i className="fas fa-file-alt text-info me-2"></i>
-                          Documentation
-                        </h5>
-                        <p className="card-text">Comprehensive documentation for all our services and policies.</p>
-                        <div className="mt-3">
-                          <button className="btn btn-outline-info btn-sm me-2">Rental Policy</button>
-                          <button className="btn btn-outline-info btn-sm me-2">Terms of Service</button>
-                          <button className="btn btn-outline-info btn-sm">Privacy Policy</button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="col-md-6 mb-4">
-                    <div className="card h-100">
-                      <div className="card-body">
-                        <h5 className="card-title">
-                          <i className="fas fa-tools text-warning me-2"></i>
-                          Troubleshooting
-                        </h5>
-                        <p className="card-text">Common issues and their solutions for quick problem resolution.</p>
-                        <div className="mt-3">
-                          <button className="btn btn-outline-warning btn-sm me-2">WiFi Issues</button>
-                          <button className="btn btn-outline-warning btn-sm me-2">Performance</button>
-                          <button className="btn btn-outline-warning btn-sm">Software Problems</button>
-                        </div>
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Contact Information */}
+      {/* Contact Information - Updated to White Box */}
       <div className="row mt-5">
         <div className="col-md-12">
-          <div className="card bg-light">
-            <div className="card-body">
-              <h4 className="mb-4">Other Ways to Reach Us</h4>
+          <div className="card bg-white border shadow-sm">
+            <div className="card-body p-5">
+              <h4 className="mb-4 text-center text-dark">Other Ways to Reach Us</h4>
               <div className="row">
-                <div className="col-md-3 text-center mb-3">
-                  <div className="text-primary mb-2">
-                    <i className="fas fa-envelope fa-2x"></i>
+                {[
+                  {
+                    icon: "fas fa-envelope text-primary",
+                    title: "Email",
+                    detail: "quicktechrent@gmail.com",
+                    subtext: "Response within 2 hours"
+                  },
+                  {
+                    icon: "fas fa-phone text-success",
+                    title: "Phone",
+                    detail: "+91 9769602148",
+                    subtext: "24/7 available"
+                  },
+                  {
+                    icon: "fas fa-clock text-info",
+                    title: "Business Hours",
+                    detail: "Mon-Fri: 9AM-6PM IST",
+                    subtext: "Sat: 10AM-4PM IST"
+                  },
+                  {
+                    icon: "fas fa-map-marker-alt text-warning",
+                    title: "Address",
+                    detail: "123 Tech Street",
+                    subtext: "Silicon Valley, Mumbai 400042"
+                  }
+                ].map((contact, index) => (
+                  <div key={index} className="col-md-3 text-center mb-3">
+                    <div 
+                      className="contact-item p-3 rounded"
+                      style={contactItemStyle}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#f8f9fa';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = '';
+                      }}
+                    >
+                      <i className={`${contact.icon} fa-2x mb-3`}></i>
+                      <h6 className="mb-2 text-dark">{contact.title}</h6>
+                      <p className="mb-1 fw-semibold text-dark">{contact.detail}</p>
+                      <small className="text-muted">{contact.subtext}</small>
+                    </div>
                   </div>
-                  <h6>Email</h6>
-                  <p className="mb-1">quicktechrent@gmail.com</p>
-                  <small className="text-muted">Response within 2 hours</small>
-                </div>
-                <div className="col-md-3 text-center mb-3">
-                  <div className="text-success mb-2">
-                    <i className="fas fa-phone fa-2x"></i>
-                  </div>
-                  <h6>Phone</h6>
-                  <p className="mb-1">+91 9769602148</p>
-                  <small className="text-muted">24/7 available</small>
-                </div>
-                <div className="col-md-3 text-center mb-3">
-                  <div className="text-info mb-2">
-                    <i className="fas fa-clock fa-2x"></i>
-                  </div>
-                  <h6>Business Hours</h6>
-                  <p className="mb-1">Mon-Fri: 9AM-6PM IST</p>
-                  <p className="mb-1">Sat: 10AM-4PM IST</p>
-                </div>
-                <div className="col-md-3 text-center mb-3">
-                  <div className="text-warning mb-2">
-                    <i className="fas fa-map-marker-alt fa-2x"></i>
-                  </div>
-                  <h6>Address</h6>
-                  <p className="mb-1">123 Tech Street</p>
-                  <p className="mb-1">Silicon Valley, Mumbai 400042</p>
-                </div>
+                ))}
               </div>
             </div>
           </div>
@@ -462,20 +556,29 @@ const SupportPage = () => {
       {/* Live Chat Modal */}
       {showChat && (
         <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,0.5)'}}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header bg-primary text-white">
-                <h5 className="modal-title">
-                  <i className="fas fa-headset me-2"></i>
-                  Live Chat Support
-                </h5>
+          <div className="modal-dialog modal-dialog-centered modal-lg">
+            <div className="modal-content border-0 shadow-lg">
+              <div className="modal-header bg-primary text-white border-0">
+                <div className="d-flex align-items-center">
+                  <div className="bg-white rounded-circle p-2 me-3">
+                    <i className="fas fa-headset text-primary fa-lg"></i>
+                  </div>
+                  <div>
+                    <h5 className="modal-title mb-0">Live Chat Support</h5>
+                    <small className="opacity-75">We're online and ready to help</small>
+                  </div>
+                </div>
                 <button 
                   type="button" 
                   className="btn-close btn-close-white"
                   onClick={() => setShowChat(false)}
                 ></button>
               </div>
-              <div className="modal-body" style={{height: '400px', overflowY: 'auto'}}>
+              <div 
+                ref={chatContainerRef}
+                className="modal-body p-4" 
+                style={{height: '400px', overflowY: 'auto', backgroundColor: '#f8f9fa'}}
+              >
                 {chatMessages.map(message => (
                   <div 
                     key={message.id} 
@@ -484,18 +587,18 @@ const SupportPage = () => {
                     }`}
                   >
                     <div 
-                      className={`p-3 rounded ${
+                      className={`p-3 rounded-3 ${
                         message.sender === 'user' 
                           ? 'bg-primary text-white' 
-                          : 'bg-light border text-dark'
+                          : 'bg-white border text-dark shadow-sm'
                       }`}
                       style={{ maxWidth: '70%' }}
                     >
-                      {message.text}
+                      <div style={messageTextStyle}>{message.text}</div>
                       <div 
-                        className={`small ${
+                        className={`small mt-1 ${
                           message.sender === 'user' ? 'text-white-50' : 'text-muted'
-                        } mt-1`}
+                        }`}
                       >
                         {message.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                       </div>
@@ -503,18 +606,18 @@ const SupportPage = () => {
                   </div>
                 ))}
               </div>
-              <div className="modal-footer">
+              <div className="modal-footer border-0 bg-light">
                 <form onSubmit={handleSendMessage} className="w-100">
-                  <div className="input-group">
+                  <div className="input-group input-group-lg">
                     <input
                       type="text"
-                      className="form-control"
-                      placeholder="Type your message..."
+                      className="form-control border-primary"
+                      placeholder="Type your message here..."
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                     />
-                    <button className="btn btn-primary" type="submit">
-                      Send
+                    <button className="btn btn-primary px-4" type="submit">
+                      <i className="fas fa-paper-plane"></i>
                     </button>
                   </div>
                 </form>

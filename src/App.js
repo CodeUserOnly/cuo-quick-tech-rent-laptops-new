@@ -113,10 +113,16 @@ function App() {
     }
   }, []);
 
-  // Cart functions
+  // Cart functions - UPDATED: Added unique cartItemId
   const addToCart = (device) => {
     if (device.available) {
-      setCart([...cart, { ...device, rentalDuration: 7 }]);
+      const cartItem = {
+        ...device,
+        rentalDuration: 7,
+        cartItemId: `${device.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` // Unique ID for cart item
+      };
+      setCart([...cart, cartItem]);
+      console.log(`Added ${device.name} to cart. Cart items:`, cart.length + 1);
     }
   };
 
@@ -169,19 +175,41 @@ function App() {
     }
   };
 
-  const updateDevice = async (updatedDevice) => {
+  const updateDevice = async (deviceId, updatedData) => {
     try {
-      await devicesService.update(updatedDevice.id, updatedDevice);
+      // First get the current device to merge with updated data
+      const currentDevice = devices.find(device => device.id === deviceId);
+      if (!currentDevice) {
+        throw new Error(`Device with ID ${deviceId} not found`);
+      }
+      
+      const updatedDevice = {
+        ...currentDevice,
+        ...updatedData,
+        id: deviceId // Ensure ID is preserved
+      };
+      
+      console.log('Updating device in database:', deviceId, updatedDevice);
+      await devicesService.update(deviceId, updatedDevice);
+      
       setDevices(
         devices.map((device) =>
-          device.id === updatedDevice.id ? updatedDevice : device
+          device.id === deviceId ? updatedDevice : device
         )
       );
+      
+      console.log('Device updated successfully');
     } catch (error) {
       console.error("Error updating device:", error);
       // Fallback to localStorage
+      const currentDevice = devices.find(device => device.id === deviceId);
+      const updatedDevice = {
+        ...currentDevice,
+        ...updatedData,
+        id: deviceId
+      };
       const updatedDevices = devices.map((device) =>
-        device.id === updatedDevice.id ? updatedDevice : device
+        device.id === deviceId ? updatedDevice : device
       );
       setDevices(updatedDevices);
       localStorage.setItem("devices", JSON.stringify(updatedDevices));
@@ -250,7 +278,16 @@ function App() {
           )}
 
           <Routes>
-            <Route path="/" element={<Homepage devices={devices} />} />
+            {/* FIXED: Added addToCart prop to Homepage */}
+            <Route 
+              path="/" 
+              element={
+                <Homepage 
+                  devices={devices} 
+                  addToCart={addToCart} 
+                />
+              } 
+            />
             <Route
               path="/browse"
               element={
@@ -286,7 +323,10 @@ function App() {
               }
             />
             <Route path="/support" element={<SupportPage />} />
-            <Route path="/about" element={<AboutPage user={user} />} />
+            <Route
+              path="/about"
+              element={<AboutPage user={user} loginUser={loginUser} />}
+            />
             <Route
               path="/cart"
               element={

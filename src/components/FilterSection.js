@@ -1,131 +1,159 @@
 import React from 'react';
 
-const FilterSection = ({ filters, onFilterChange, onClearFilters }) => {
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
+const FilterSection = ({ 
+  filters, 
+  onFilterChange, 
+  onClearFilters,
+  brands = [],
+  locations = [],
+  ramOptions = [],
+  storageOptions = [],
+  onClose
+}) => {
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
     onFilterChange({
       ...filters,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     });
   };
 
   return (
-    <div className="filter-section">
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h5 className="filter-title">Filters</h5>
-        <button 
-          className="btn btn-sm btn-outline-secondary"
-          onClick={onClearFilters}
-        >
-          Clear All
-        </button>
-      </div>
-
-      <div className="mb-3">
-        <label htmlFor="priceRange" className="form-label">
-          Price Range: ₹{filters.minPrice} - ₹{filters.maxPrice}
-        </label>
-        <div className="row">
-          <div className="col-6">
-            <input
-              type="number"
-              className="form-control form-control-sm"
-              placeholder="Min"
-              name="minPrice"
-              value={filters.minPrice}
-              onChange={handleFilterChange}
-            />
-          </div>
-          <div className="col-6">
-            <input
-              type="number"
-              className="form-control form-control-sm"
-              placeholder="Max"
-              name="maxPrice"
-              value={filters.maxPrice}
-              onChange={handleFilterChange}
-            />
+    <div className="card border-0 shadow-sm">
+      <div className="card-header bg-white border-0 py-3">
+        <div className="d-flex justify-content-between align-items-center">
+          <h6 className="mb-0 fw-bold">
+            <i className="fas fa-filter me-2 text-primary"></i>
+            Filters
+          </h6>
+          <div>
+            <button 
+              className="btn btn-sm btn-outline-danger me-2"
+              onClick={onClearFilters}
+            >
+              Clear
+            </button>
+            <button 
+              className="btn btn-sm btn-outline-secondary"
+              onClick={onClose}
+            >
+              <i className="fas fa-times"></i>
+            </button>
           </div>
         </div>
       </div>
+      
+      <div className="card-body p-3">
+        {/* Available Only Filter */}
+        <div className="mb-3">
+          <div className="form-check">
+            <input
+              className="form-check-input"
+              type="checkbox"
+              id="availableOnly"
+              name="availableOnly"
+              checked={filters.availableOnly}
+              onChange={handleInputChange}
+            />
+            <label className="form-check-label fw-medium" htmlFor="availableOnly">
+              Available Only
+            </label>
+          </div>
+        </div>
 
-      <div className="mb-3">
-        <label htmlFor="brand" className="form-label">Brand</label>
-        <select 
-          className="form-select form-select-sm" 
-          name="brand"
-          value={filters.brand}
-          onChange={handleFilterChange}
-        >
-          <option value="">All Brands</option>
-          <option value="Apple">Apple</option>
-          <option value="Dell">Dell</option>
-          <option value="HP">HP</option>
-          <option value="Lenovo">Lenovo</option>
-          <option value="Asus">Asus</option>
-          <option value="Acer">Acer</option>
-        </select>
-      </div>
+        {/* Price Range */}
+        <div className="mb-3">
+          <label className="form-label fw-medium">Price Range</label>
+          <div className="row g-2">
+            <div className="col-6">
+              <input
+                type="number"
+                className="form-control form-control-sm"
+                placeholder="Min"
+                name="minPrice"
+                value={filters.minPrice}
+                onChange={handleInputChange}
+                min="0"
+              />
+            </div>
+            <div className="col-6">
+              <input
+                type="number"
+                className="form-control form-control-sm"
+                placeholder="Max"
+                name="maxPrice"
+                value={filters.maxPrice}
+                onChange={handleInputChange}
+                min="0"
+                max="2000"
+              />
+            </div>
+          </div>
+        </div>
 
-      <div className="mb-3">
-        <label htmlFor="location" className="form-label">Location</label>
-        <input
-          type="text"
-          className="form-control form-control-sm"
-          placeholder="Enter location"
-          name="location"
-          value={filters.location}
-          onChange={handleFilterChange}
-        />
-      </div>
+        {/* Brand Filter */}
+        <div className="mb-3">
+          <label className="form-label fw-medium">Brand</label>
+          <select
+            className="form-select form-select-sm"
+            name="brand"
+            value={filters.brand}
+            onChange={handleInputChange}
+          >
+            <option value="">All Brands</option>
+            {brands.map(brand => (
+              <option key={brand} value={brand}>{brand}</option>
+            ))}
+          </select>
+        </div>
 
-      <div className="mb-3">
-        <label htmlFor="ram" className="form-label">RAM</label>
-        <select 
-          className="form-select form-select-sm" 
-          name="ram"
-          value={filters.ram}
-          onChange={handleFilterChange}
-        >
-          <option value="">All RAM</option>
-          <option value="8GB">8GB</option>
-          <option value="16GB">16GB</option>
-          <option value="32GB">32GB</option>
-          <option value="64GB">64GB</option>
-        </select>
-      </div>
+        {/* Location Filter */}
+        <div className="mb-3">
+          <label className="form-label fw-medium">Location</label>
+          <select
+            className="form-select form-select-sm"
+            name="location"
+            value={filters.location}
+            onChange={handleInputChange}
+          >
+            <option value="">All Locations</option>
+            {locations.map(location => (
+              <option key={location} value={location}>{location}</option>
+            ))}
+          </select>
+        </div>
 
-      <div className="mb-3">
-        <label htmlFor="storage" className="form-label">Storage</label>
-        <select 
-          className="form-select form-select-sm" 
-          name="storage"
-          value={filters.storage}
-          onChange={handleFilterChange}
-        >
-          <option value="">All Storage</option>
-          <option value="256GB SSD">256GB SSD</option>
-          <option value="512GB SSD">512GB SSD</option>
-          <option value="1TB SSD">1TB SSD</option>
-          <option value="2TB SSD">2TB SSD</option>
-        </select>
-      </div>
+        {/* RAM Filter */}
+        <div className="mb-3">
+          <label className="form-label fw-medium">RAM</label>
+          <select
+            className="form-select form-select-sm"
+            name="ram"
+            value={filters.ram}
+            onChange={handleInputChange}
+          >
+            <option value="">All RAM</option>
+            {ramOptions.map(ram => (
+              <option key={ram} value={ram}>{ram}</option>
+            ))}
+          </select>
+        </div>
 
-      <div className="form-check mb-3">
-        <input
-          className="form-check-input"
-          type="checkbox"
-          id="availableOnly"
-          name="availableOnly"
-          checked={filters.availableOnly}
-          onChange={(e) => onFilterChange({
-            ...filters,
-            availableOnly: e.target.checked
-          })}
-        />
-        <label className="form-check-label" htmlFor="availableOnly">
-          Available Only
-        </label>
+        {/* Storage Filter */}
+        <div className="mb-3">
+          <label className="form-label fw-medium">Storage</label>
+          <select
+            className="form-select form-select-sm"
+            name="storage"
+            value={filters.storage}
+            onChange={handleInputChange}
+          >
+            <option value="">All Storage</option>
+            {storageOptions.map(storage => (
+              <option key={storage} value={storage}>{storage}</option>
+            ))}
+          </select>
+        </div>
       </div>
     </div>
   );

@@ -46,6 +46,7 @@ const AdminLogin = ({ loginUser }) => {
                     className="form-control" 
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    placeholder="Enter email address"
                     required 
                   />
                 </div>
@@ -56,6 +57,7 @@ const AdminLogin = ({ loginUser }) => {
                     className="form-control" 
                     value={formData.password}
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
+                    placeholder="Enter password"
                     required 
                   />
                 </div>
@@ -64,9 +66,11 @@ const AdminLogin = ({ loginUser }) => {
                 </button>
               </form>
 
+              <hr className="my-4" />
+
               <div className="text-center mt-3">
-                <p>Test Admin: admin@demo.com / password</p>
-                <Link to="/login">User Login</Link>
+                <p>Create a new admin account here: <Link to="/admin/signup">Admin Signup</Link></p>
+                <p>Are you a regular user? <Link to="/login">User Login</Link></p>
               </div>
             </div>
           </div>
