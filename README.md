@@ -6,7 +6,7 @@ Quick Tech Rent is a full-featured laptop rental web application with **Authenti
 
 ## 🚀 Live Demo
 
-🔗 https://brilliant-figolla-5995ad.netlify.app/
+🔗 https://quick-tech-rent-001.netlify.app/
 
 ---
 
