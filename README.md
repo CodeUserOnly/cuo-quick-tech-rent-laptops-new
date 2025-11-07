@@ -1,6 +1,6 @@
 # 🖥️ Quick Tech Rent – Laptop Rental Platform
 
-Quick Tech Rent is a full-featured laptop rental web application with **Authentication**, **Shopping Cart**, **Checkout**, and a **role-based Admin Inventory Dashboard** — powered by **React + Supabase**.
+Quick Tech Rent is a full-featured laptop rental web application with **Authentication**, **Shopping Cart**, **Checkout**, **User Profile**, **role-based Admin Inventory Dashboard** and **more** — powered by **React + Supabase**.
 
 ---
 
