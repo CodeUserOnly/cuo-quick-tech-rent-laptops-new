@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { usersService } from '../services/supabase';
 
@@ -8,71 +8,460 @@ const AdminLogin = ({ loginUser }) => {
     password: ''
   });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const navigate = useNavigate();
+
+  // Detect mobile screen
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+    if (error) setError('');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
+
+    if (!formData.email || !formData.password) {
+      setError('Please fill in all fields');
+      setLoading(false);
+      return;
+    }
 
     try {
       const user = await usersService.login(formData.email, formData.password);
       
       if (user && user.role === 'admin') {
         loginUser(user);
-        navigate('/admin');
+        // Check for redirect after login
+        const redirectPath = sessionStorage.getItem('redirectAfterLogin');
+        if (redirectPath) {
+          sessionStorage.removeItem('redirectAfterLogin');
+          navigate(redirectPath);
+        } else {
+          navigate('/admin');
+        }
       } else {
-        setError('Admin access required');
+        setError('Admin access required. Please check your credentials.');
       }
     } catch (error) {
-      setError('Login failed');
+      console.error('Admin login error:', error);
+      setError('Login failed. Please check your email and password.');
+    } finally {
+      setLoading(false);
     }
   };
 
+  // Add styles to document
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      * {
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateX(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes shimmer {
+        0% {
+          background-position: -1000px 0;
+        }
+        100% {
+          background-position: 1000px 0;
+        }
+      }
+
+      /* Prevent zoom on input focus for Android */
+      input[type="email"],
+      input[type="password"],
+      input[type="text"] {
+        font-size: 16px !important;
+      }
+
+      /* Smooth scrolling */
+      .admin-login-container {
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* Active state for touch feedback */
+      .touch-feedback:active {
+        transform: scale(0.98);
+        transition: transform 0.1s ease;
+      }
+
+      /* Input focus effects */
+      .input-focus-effect:focus {
+        outline: none;
+        border-color: #f59e0b;
+        box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+      }
+
+      /* Loading animation */
+      .loading-spinner {
+        animation: spin 1s linear infinite;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
+  }, []);
+
+  // Styles based on device
+  const styles = {
+    container: {
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+      padding: isMobile ? '16px' : '24px',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+    },
+    card: {
+      maxWidth: isMobile ? '100%' : '450px',
+      width: '100%',
+      background: 'white',
+      borderRadius: isMobile ? '20px' : '24px',
+      boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+      overflow: 'hidden',
+      animation: 'fadeIn 0.5s ease-out'
+    },
+    header: {
+      background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+      padding: isMobile ? '32px 24px' : '40px 32px',
+      textAlign: 'center',
+      color: 'white'
+    },
+    iconWrapper: {
+      width: isMobile ? '70px' : '80px',
+      height: isMobile ? '70px' : '80px',
+      margin: '0 auto 16px',
+      background: 'rgba(255, 255, 255, 0.2)',
+      borderRadius: '50%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      animation: 'slideIn 0.5s ease-out'
+    },
+    title: {
+      fontSize: isMobile ? '28px' : '32px',
+      fontWeight: '700',
+      margin: '0 0 8px 0',
+      color: 'white'
+    },
+    subtitle: {
+      fontSize: isMobile ? '14px' : '16px',
+      opacity: 0.9,
+      margin: 0,
+      color: 'white'
+    },
+    body: {
+      padding: isMobile ? '24px' : '32px'
+    },
+    errorAlert: {
+      background: '#fed7d7',
+      color: '#c53030',
+      padding: '12px 16px',
+      borderRadius: '12px',
+      marginBottom: '20px',
+      fontSize: '14px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      animation: 'fadeIn 0.3s ease-out'
+    },
+    formGroup: {
+      marginBottom: '20px'
+    },
+    label: {
+      display: 'block',
+      fontSize: '14px',
+      fontWeight: '600',
+      color: '#2d3748',
+      marginBottom: '8px'
+    },
+    inputWrapper: {
+      position: 'relative',
+      display: 'flex',
+      alignItems: 'center'
+    },
+    input: {
+      width: '100%',
+      padding: isMobile ? '14px 16px' : '12px 16px',
+      fontSize: '16px',
+      border: '2px solid #e2e8f0',
+      borderRadius: '12px',
+      transition: 'all 0.3s ease',
+      backgroundColor: 'white',
+      outline: 'none'
+    },
+    passwordToggle: {
+      position: 'absolute',
+      right: '12px',
+      background: 'transparent',
+      border: 'none',
+      cursor: 'pointer',
+      padding: '8px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: '#a0aec0'
+    },
+    loginBtn: {
+      width: '100%',
+      padding: isMobile ? '14px' : '12px',
+      background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+      color: 'white',
+      border: 'none',
+      borderRadius: '12px',
+      fontSize: isMobile ? '16px' : '18px',
+      fontWeight: '600',
+      cursor: 'pointer',
+      transition: 'all 0.3s ease',
+      marginTop: '8px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '8px'
+    },
+    divider: {
+      margin: '24px 0',
+      position: 'relative',
+      textAlign: 'center'
+    },
+    dividerLine: {
+      height: '1px',
+      background: 'linear-gradient(90deg, transparent, #e2e8f0, transparent)',
+      position: 'absolute',
+      top: '50%',
+      left: 0,
+      right: 0
+    },
+    dividerText: {
+      background: 'white',
+      padding: '0 12px',
+      position: 'relative',
+      color: '#a0aec0',
+      fontSize: '14px'
+    },
+    footer: {
+      textAlign: 'center',
+      marginTop: '24px'
+    },
+    footerText: {
+      color: '#4a5568',
+      fontSize: '14px',
+      marginBottom: '12px'
+    },
+    footerLink: {
+      color: '#f59e0b',
+      textDecoration: 'none',
+      fontWeight: '600',
+      transition: 'color 0.2s ease'
+    },
+    adminBadge: {
+      display: 'inline-block',
+      background: 'rgba(245, 158, 11, 0.1)',
+      color: '#f59e0b',
+      padding: '4px 12px',
+      borderRadius: '20px',
+      fontSize: '12px',
+      fontWeight: '600',
+      marginBottom: '16px'
+    }
+  };
+
+  // Icons
+  const Icon = ({ name, size = 20, color = 'currentColor' }) => {
+    const icons = {
+      admin: (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L3 7L12 12L21 7L12 2Z" stroke={color} strokeWidth="1.5"/>
+          <path d="M12 12V21.5M12 12L3 7M12 12L21 7M12 21.5L3 16.5V9.5M12 21.5L21 16.5V9.5" stroke={color} strokeWidth="1.5"/>
+          <path d="M16 12L12 14L8 12M12 14V18" stroke={color} strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      ),
+      email: (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 8L12 13L21 8M3 8H21M3 8V16C3 16.5304 3.21071 17.0391 3.58579 17.4142C3.96086 17.7893 4.46957 18 5 18H19C19.5304 18 20.0391 17.7893 20.4142 17.4142C20.7893 17.0391 21 16.5304 21 16V8M3 8L3 6C3 5.46957 3.21071 4.96086 3.58579 4.58579C3.96086 4.21071 4.46957 4 5 4H19C19.5304 4 20.0391 4.21071 20.4142 4.58579C20.7893 4.96086 21 5.46957 21 6V8" stroke={color} strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      ),
+      lock: (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L3 7L12 12L21 7L12 2ZM12 12V21.5M12 12L3 7M12 12L21 7M12 21.5L3 16.5V9.5M12 21.5L21 16.5V9.5" stroke={color} strokeWidth="1.5"/>
+          <path d="M16 12L12 14L8 12M12 14V18" stroke={color} strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      ),
+      eye: (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke={color} strokeWidth="1.5"/>
+          <circle cx="12" cy="12" r="3" stroke={color} strokeWidth="1.5"/>
+        </svg>
+      ),
+      eyeOff: (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2 2L22 22M9.9 4.24C10.6 4.09 11.3 4 12 4C19 4 23 12 23 12C22.5 13 21.8 14 20.9 14.9M6.5 6.5C4.2 8.2 2.5 11 2 12C2 12 6 20 12 20C13.3 20 14.5 19.7 15.6 19.1M12 8C12.8 8 13.5 8.3 14 8.8C14.5 9.3 14.8 10 14.8 10.8M8 12C8 13.1 8.9 14 10 14" stroke={color} strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      ),
+      spinner: (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="loading-spinner">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none" strokeDasharray="31.4 31.4" strokeLinecap="round"/>
+          <path d="M12 2 L12 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        </svg>
+      )
+    };
+    return icons[name] || null;
+  };
+
   return (
-    <div className="container mt-4">
-      <div className="row justify-content-center">
-        <div className="col-md-6">
-          <div className="card">
-            <div className="card-body">
-              <h2 className="text-center mb-4">Admin Login</h2>
-              
-              {error && <div className="alert alert-danger">{error}</div>}
+    <div style={styles.container} className="admin-login-container">
+      <div style={styles.card}>
+        <div style={styles.header}>
+          <div style={styles.iconWrapper}>
+            <Icon name="admin" size={isMobile ? 32 : 36} color="white" />
+          </div>
+          <h1 style={styles.title}>Admin Portal</h1>
+          <p style={styles.subtitle}>Secure access for administrators</p>
+        </div>
 
-              <form onSubmit={handleSubmit}>
-                <div className="mb-3">
-                  <label className="form-label">Email</label>
-                  <input 
-                    type="email" 
-                    className="form-control" 
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    placeholder="Enter email address"
-                    required 
-                  />
-                </div>
-                <div className="mb-3">
-                  <label className="form-label">Password</label>
-                  <input 
-                    type="password" 
-                    className="form-control" 
-                    value={formData.password}
-                    onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    placeholder="Enter password"
-                    required 
-                  />
-                </div>
-                <button type="submit" className="btn btn-primary w-100">
-                  Login as Admin
-                </button>
-              </form>
+        <div style={styles.body}>
+          <div style={styles.adminBadge}>
+            <Icon name="lock" size={12} color="#f59e0b" />
+            <span style={{ marginLeft: '4px' }}>Administrator Access Only</span>
+          </div>
 
-              <hr className="my-4" />
+          {error && (
+            <div style={styles.errorAlert}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 8V12M12 16H12.01M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+              <span>{error}</span>
+            </div>
+          )}
 
-              <div className="text-center mt-3">
-                <p>Create a new admin account here: <Link to="/admin/signup">Admin Signup</Link></p>
-                <p>Are you a regular user? <Link to="/login">User Login</Link></p>
+          <form onSubmit={handleSubmit}>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Admin Email</label>
+              <div style={styles.inputWrapper}>
+                <input
+                  type="email"
+                  style={styles.input}
+                  className="input-focus-effect"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="Enter admin email address"
+                  required
+                  disabled={loading}
+                />
               </div>
             </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Password</label>
+              <div style={styles.inputWrapper}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  style={styles.input}
+                  className="input-focus-effect"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="Enter admin password"
+                  required
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  style={styles.passwordToggle}
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="touch-feedback"
+                >
+                  <Icon name={showPassword ? "eyeOff" : "eye"} size={18} />
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              style={styles.loginBtn}
+              className="touch-feedback"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Icon name="spinner" size={18} color="white" />
+                  Authenticating...
+                </>
+              ) : (
+                <>
+                  <Icon name="lock" size={18} color="white" />
+                  Login as Admin
+                </>
+              )}
+            </button>
+          </form>
+
+          <div style={styles.divider}>
+            <div style={styles.dividerLine}></div>
+            <span style={styles.dividerText}>Admin Access</span>
+          </div>
+
+          <div style={styles.footer}>
+            <p style={styles.footerText}>
+              Create a new admin account:{" "}
+              <Link to="/admin/signup" style={styles.footerLink} className="touch-feedback">
+                Admin Signup
+              </Link>
+            </p>
+            <p style={styles.footerText}>
+              Are you a regular user?{" "}
+              <Link to="/login" style={styles.footerLink} className="touch-feedback">
+                User Login
+              </Link>
+            </p>
           </div>
         </div>
       </div>

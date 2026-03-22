@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { usersService } from "../services/supabase";
 
@@ -9,7 +9,29 @@ const UserLogin = ({ loginUser }) => {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const navigate = useNavigate();
+
+  // Detect mobile screen
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Check for redirect after login
+  useEffect(() => {
+    const redirectPath = sessionStorage.getItem('redirectAfterLogin');
+    if (redirectPath) {
+      sessionStorage.removeItem('redirectAfterLogin');
+      if (redirectPath === '/checkout') {
+        navigate('/checkout');
+      }
+    }
+  }, [navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -17,6 +39,8 @@ const UserLogin = ({ loginUser }) => {
       ...prev,
       [name]: value,
     }));
+    // Clear error when user starts typing
+    if (error) setError("");
   };
 
   const handleSubmit = async (e) => {
@@ -24,78 +48,453 @@ const UserLogin = ({ loginUser }) => {
     setError("");
     setLoading(true);
 
+    // Basic validation
+    if (!formData.email || !formData.password) {
+      setError("Please fill in all fields");
+      setLoading(false);
+      return;
+    }
+
     try {
       const user = await usersService.login(formData.email, formData.password);
 
       if (user) {
         loginUser(user);
-        navigate("/");
+        // Check if there's a redirect path
+        const redirectPath = sessionStorage.getItem('redirectAfterLogin');
+        if (redirectPath) {
+          sessionStorage.removeItem('redirectAfterLogin');
+          navigate(redirectPath);
+        } else {
+          navigate("/");
+        }
       } else {
         setError("Invalid email or password");
       }
     } catch (error) {
-      setError("Login failed. Please try again.");
+      setError("Login failed. Please check your credentials and try again.");
     } finally {
       setLoading(false);
     }
   };
 
+  // Add styles to document
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      * {
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateX(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      @keyframes shimmer {
+        0% {
+          background-position: -1000px 0;
+        }
+        100% {
+          background-position: 1000px 0;
+        }
+      }
+
+      @keyframes pulse {
+        0%, 100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+      }
+
+      /* Prevent zoom on input focus for Android */
+      input[type="email"],
+      input[type="password"],
+      input[type="text"] {
+        font-size: 16px !important;
+      }
+
+      /* Smooth scrolling */
+      .login-container {
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* Active state for touch feedback */
+      .touch-feedback:active {
+        transform: scale(0.98);
+        transition: transform 0.1s ease;
+      }
+
+      /* Input focus effects */
+      .input-focus-effect:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      }
+
+      /* Loading animation */
+      .loading-spinner {
+        animation: pulse 1s ease-in-out infinite;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
+  }, []);
+
+  // Styles based on device
+  const styles = {
+    container: {
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      padding: isMobile ? '16px' : '24px',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+    },
+    card: {
+      maxWidth: isMobile ? '100%' : '450px',
+      width: '100%',
+      background: 'white',
+      borderRadius: isMobile ? '20px' : '24px',
+      boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+      overflow: 'hidden',
+      animation: 'fadeIn 0.5s ease-out'
+    },
+    header: {
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      padding: isMobile ? '32px 24px' : '40px 32px',
+      textAlign: 'center',
+      color: 'white'
+    },
+    iconWrapper: {
+      width: isMobile ? '70px' : '80px',
+      height: isMobile ? '70px' : '80px',
+      margin: '0 auto 16px',
+      background: 'rgba(255, 255, 255, 0.2)',
+      borderRadius: '50%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      animation: 'slideIn 0.5s ease-out'
+    },
+    title: {
+      fontSize: isMobile ? '28px' : '32px',
+      fontWeight: '700',
+      margin: '0 0 8px 0',
+      color: 'white'
+    },
+    subtitle: {
+      fontSize: isMobile ? '14px' : '16px',
+      opacity: 0.9,
+      margin: 0,
+      color: 'white'
+    },
+    body: {
+      padding: isMobile ? '24px' : '32px'
+    },
+    errorAlert: {
+      background: '#fed7d7',
+      color: '#c53030',
+      padding: '12px 16px',
+      borderRadius: '12px',
+      marginBottom: '20px',
+      fontSize: '14px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      animation: 'fadeIn 0.3s ease-out'
+    },
+    formGroup: {
+      marginBottom: '20px'
+    },
+    label: {
+      display: 'block',
+      fontSize: '14px',
+      fontWeight: '600',
+      color: '#2d3748',
+      marginBottom: '8px'
+    },
+    inputWrapper: {
+      position: 'relative',
+      display: 'flex',
+      alignItems: 'center'
+    },
+    input: {
+      width: '100%',
+      padding: isMobile ? '14px 16px' : '12px 16px',
+      fontSize: '16px',
+      border: '2px solid #e2e8f0',
+      borderRadius: '12px',
+      transition: 'all 0.3s ease',
+      backgroundColor: 'white',
+      outline: 'none'
+    },
+    passwordToggle: {
+      position: 'absolute',
+      right: '12px',
+      background: 'transparent',
+      border: 'none',
+      cursor: 'pointer',
+      padding: '8px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: '#a0aec0'
+    },
+    loginBtn: {
+      width: '100%',
+      padding: isMobile ? '14px' : '12px',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      color: 'white',
+      border: 'none',
+      borderRadius: '12px',
+      fontSize: isMobile ? '16px' : '18px',
+      fontWeight: '600',
+      cursor: 'pointer',
+      transition: 'all 0.3s ease',
+      marginTop: '8px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '8px'
+    },
+    divider: {
+      margin: '24px 0',
+      position: 'relative',
+      textAlign: 'center'
+    },
+    dividerLine: {
+      height: '1px',
+      background: 'linear-gradient(90deg, transparent, #e2e8f0, transparent)',
+      position: 'absolute',
+      top: '50%',
+      left: 0,
+      right: 0
+    },
+    dividerText: {
+      background: 'white',
+      padding: '0 12px',
+      position: 'relative',
+      color: '#a0aec0',
+      fontSize: '14px'
+    },
+    footer: {
+      textAlign: 'center',
+      marginTop: '24px'
+    },
+    footerText: {
+      color: '#4a5568',
+      fontSize: '14px',
+      marginBottom: '12px'
+    },
+    footerLink: {
+      color: '#667eea',
+      textDecoration: 'none',
+      fontWeight: '600',
+      transition: 'color 0.2s ease'
+    },
+    socialLogin: {
+      display: 'flex',
+      gap: '12px',
+      marginTop: '20px'
+    },
+    socialBtn: {
+      flex: 1,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '8px',
+      padding: '12px',
+      background: 'white',
+      border: '1px solid #e2e8f0',
+      borderRadius: '12px',
+      cursor: 'pointer',
+      transition: 'all 0.2s ease',
+      fontSize: '14px',
+      fontWeight: '500',
+      color: '#4a5568'
+    }
+  };
+
+  // Icons
+  const Icon = ({ name, size = 20, color = 'currentColor' }) => {
+    const icons = {
+      lock: (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L3 7L12 12L21 7L12 2ZM12 12V21.5M12 12L3 7M12 12L21 7M12 21.5L3 16.5V9.5M12 21.5L21 16.5V9.5" stroke={color} strokeWidth="1.5"/>
+          <path d="M16 12L12 14L8 12M12 14V18" stroke={color} strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      ),
+      email: (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 8L12 13L21 8M3 8H21M3 8V16C3 16.5304 3.21071 17.0391 3.58579 17.4142C3.96086 17.7893 4.46957 18 5 18H19C19.5304 18 20.0391 17.7893 20.4142 17.4142C20.7893 17.0391 21 16.5304 21 16V8M3 8L3 6C3 5.46957 3.21071 4.96086 3.58579 4.58579C3.96086 4.21071 4.46957 4 5 4H19C19.5304 4 20.0391 4.21071 20.4142 4.58579C20.7893 4.96086 21 5.46957 21 6V8" stroke={color} strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      ),
+      eye: (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke={color} strokeWidth="1.5"/>
+          <circle cx="12" cy="12" r="3" stroke={color} strokeWidth="1.5"/>
+        </svg>
+      ),
+      eyeOff: (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2 2L22 22M9.9 4.24C10.6 4.09 11.3 4 12 4C19 4 23 12 23 12C22.5 13 21.8 14 20.9 14.9M6.5 6.5C4.2 8.2 2.5 11 2 12C2 12 6 20 12 20C13.3 20 14.5 19.7 15.6 19.1M12 8C12.8 8 13.5 8.3 14 8.8C14.5 9.3 14.8 10 14.8 10.8M8 12C8 13.1 8.9 14 10 14" stroke={color} strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      ),
+      google: (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M22.56 12.25C22.56 11.47 22.49 10.72 22.36 10H12V14.26H17.92C17.66 15.63 16.88 16.79 15.71 17.57V20.34H19.28C21.36 18.42 22.56 15.6 22.56 12.25Z" fill="#4285F4"/>
+          <path d="M12 23C15 23 17.5 22 19.28 20.34L15.71 17.57C14.73 18.23 13.48 18.63 12 18.63C9.12 18.63 6.71 16.7 5.85 14.09H2.16V16.96C3.93 20.46 7.7 23 12 23Z" fill="#34A853"/>
+          <path d="M5.85 14.09C5.62 13.43 5.5 12.73 5.5 12C5.5 11.27 5.62 10.57 5.85 9.91V7.04H2.16C1.4 8.55 1 10.24 1 12C1 13.76 1.4 15.45 2.16 16.96L5.85 14.09Z" fill="#FBBC05"/>
+          <path d="M12 5.37C13.62 5.37 15.06 5.94 16.21 7.02L19.36 3.87C17.45 2.09 14.97 1 12 1C7.7 1 3.93 3.54 2.16 7.04L5.85 9.91C6.71 7.3 9.12 5.37 12 5.37Z" fill="#EA4335"/>
+        </svg>
+      ),
+      apple: (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M17.05 20.28C16.06 21.23 14.97 21.08 13.93 20.73C12.84 20.37 11.84 20.36 10.72 20.73C9.34 21.2 8.6 20.99 7.76 20.28C4.56 16.97 4.96 11.75 8.16 9.68C9.62 8.72 11.14 8.73 12.43 9.43C13.28 9.9 14.21 9.92 15.07 9.43C16.41 8.68 17.91 8.78 19.17 9.6C17.21 11.29 17.63 14.07 19.46 15.23C18.81 16.52 17.99 17.77 17.05 20.28ZM12.03 6.8C11.2 5.79 11.74 4.43 12.77 3.78C13.81 4.32 14.28 5.73 13.59 6.74C12.88 7.62 11.83 7.82 12.03 6.8Z" fill="currentColor"/>
+        </svg>
+      ),
+      spinner: (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="loading-spinner">
+          <path d="M12 2V6M12 18V22M4.93 4.93L7.76 7.76M16.24 16.24L19.07 19.07M2 12H6M18 12H22M4.93 19.07L7.76 16.24M16.24 7.76L19.07 4.93" stroke={color} strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      )
+    };
+    return icons[name] || null;
+  };
+
   return (
-    <div className="container mt-4">
-      <div className="row justify-content-center">
-        <div className="col-md-6">
-          <div className="card">
-            <div className="card-body">
-              <h2 className="text-center mb-4">Login</h2>
+    <div style={styles.container} className="login-container">
+      <div style={styles.card}>
+        <div style={styles.header}>
+          <div style={styles.iconWrapper}>
+            <Icon name="lock" size={isMobile ? 32 : 36} color="white" />
+          </div>
+          <h1 style={styles.title}>Welcome Back</h1>
+          <p style={styles.subtitle}>Login to your account</p>
+        </div>
 
-              {error && <div className="alert alert-danger">{error}</div>}
+        <div style={styles.body}>
+          {error && (
+            <div style={styles.errorAlert}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 8V12M12 16H12.01M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+              <span>{error}</span>
+            </div>
+          )}
 
-              <form onSubmit={handleSubmit}>
-                <div className="mb-3">
-                  <label className="form-label">Email</label>
-                  <input
-                    type="email"
-                    className="form-control"
-                    value={formData.email}
-                    onChange={handleChange}
-                    name="email"
-                    placeholder="Enter email address"
-                    required
-                  />
-                </div>
-                <div className="mb-3">
-                  <label className="form-label">Password</label>
-                  <input
-                    type="password"
-                    className="form-control"
-                    value={formData.password}
-                    onChange={handleChange}
-                    name="password"
-                    placeholder="Enter password"
-                    required
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="btn btn-primary w-100"
+          <form onSubmit={handleSubmit}>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Email Address</label>
+              <div style={styles.inputWrapper}>
+                <input
+                  type="email"
+                  style={styles.input}
+                  className="input-focus-effect"
+                  value={formData.email}
+                  onChange={handleChange}
+                  name="email"
+                  placeholder="Enter your email"
+                  required
                   disabled={loading}
-                >
-                  {loading ? "Logging in..." : "Login"}
-                </button>
-              </form>
-
-              <hr className="my-4" />
-
-              <div className="text-center mt-3">
-                <p>
-                  Create a new user account here:{" "}
-                  <Link to="/signup">User Signup</Link>
-                </p>
-                <p>
-                  Are you a admin? <Link to="/admin/login">Admin Login</Link>
-                </p>
+                />
               </div>
             </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Password</label>
+              <div style={styles.inputWrapper}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  style={styles.input}
+                  className="input-focus-effect"
+                  value={formData.password}
+                  onChange={handleChange}
+                  name="password"
+                  placeholder="Enter your password"
+                  required
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  style={styles.passwordToggle}
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="touch-feedback"
+                >
+                  <Icon name={showPassword ? "eyeOff" : "eye"} size={18} />
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              style={styles.loginBtn}
+              className="touch-feedback"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Icon name="spinner" size={18} color="white" />
+                  Logging in...
+                </>
+              ) : (
+                <>
+                  Login
+                </>
+              )}
+            </button>
+          </form>
+
+          <div style={styles.divider}>
+            <div style={styles.dividerLine}></div>
+            <span style={styles.dividerText}>or continue with</span>
+          </div>
+
+          <div style={styles.socialLogin}>
+            <button style={styles.socialBtn} className="touch-feedback">
+              <Icon name="google" size={18} />
+              Google
+            </button>
+            <button style={styles.socialBtn} className="touch-feedback">
+              <Icon name="apple" size={18} />
+              Apple
+            </button>
+          </div>
+
+          <div style={styles.footer}>
+            <p style={styles.footerText}>
+              Don't have an account?{" "}
+              <Link to="/signup" style={styles.footerLink} className="touch-feedback">
+                Sign up
+              </Link>
+            </p>
+            <p style={styles.footerText}>
+              Are you an admin?{" "}
+              <Link to="/admin/login" style={styles.footerLink} className="touch-feedback">
+                Admin Login
+              </Link>
+            </p>
           </div>
         </div>
       </div>

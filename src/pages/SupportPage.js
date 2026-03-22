@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 const SupportPage = () => {
-  const [activeTab, setActiveTab] = useState('contact');
+  const [activeTab, setActiveTab] = useState('faq');
   const [contactForm, setContactForm] = useState({
     name: '',
     email: '',
@@ -19,12 +19,14 @@ const SupportPage = () => {
   ]);
   const [newMessage, setNewMessage] = useState('');
   const [animatedCards, setAnimatedCards] = useState([]);
+  const [isTyping, setIsTyping] = useState(false);
   const chatContainerRef = useRef(null);
 
   const faqCategories = [
     {
       title: "Rental Process",
       icon: "fas fa-shopping-cart",
+      gradient: "linear-gradient(135deg, #667eea, #764ba2)",
       questions: [
         {
           question: "How long can I rent a laptop for?",
@@ -43,6 +45,7 @@ const SupportPage = () => {
     {
       title: "Delivery & Return",
       icon: "fas fa-shipping-fast",
+      gradient: "linear-gradient(135deg, #f093fb, #f5576c)",
       questions: [
         {
           question: "How fast is delivery?",
@@ -61,6 +64,7 @@ const SupportPage = () => {
     {
       title: "Pricing & Payments",
       icon: "fas fa-credit-card",
+      gradient: "linear-gradient(135deg, #4facfe, #00f2fe)",
       questions: [
         {
           question: "What payment methods do you accept?",
@@ -79,6 +83,7 @@ const SupportPage = () => {
     {
       title: "Technical Support",
       icon: "fas fa-tools",
+      gradient: "linear-gradient(135deg, #fa709a, #fee140)",
       questions: [
         {
           question: "What if the laptop has technical issues?",
@@ -97,12 +102,82 @@ const SupportPage = () => {
   ];
 
   useEffect(() => {
+    // Add styles WITHOUT resetting all styles
+    const styleSheet = document.createElement("style");
+    styleSheet.textContent = `
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      
+      @keyframes modalSlideIn {
+        from {
+          opacity: 0;
+          transform: scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+      
+      @keyframes pulse {
+        0%, 100% { opacity: 0.3; }
+        50% { opacity: 1; }
+      }
+      
+      .support-page-wrapper .animate-on-scroll {
+        opacity: 0;
+        animation: fadeIn 0.6s ease-out forwards;
+      }
+      
+      .support-page-wrapper .clickable-card {
+        min-height: 48px;
+        cursor: pointer;
+      }
+      
+      /* Only target nav-links within support page, not global ones */
+      .support-page-wrapper .nav-link {
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+      }
+      
+      /* Prevent any styles from affecting header/navbar */
+      .support-page-wrapper {
+        font-family: inherit;
+      }
+      
+      /* Ensure accordion buttons don't affect global styles */
+      .support-page-wrapper .accordion-button {
+        background: white;
+      }
+      
+      .support-page-wrapper .accordion-button:focus {
+        box-shadow: none;
+      }
+    `;
+    document.head.appendChild(styleSheet);
+
     // Animate cards on load
     const timer = setTimeout(() => {
       setAnimatedCards([0, 1, 2]);
     }, 100);
 
-    return () => clearTimeout(timer);
+    return () => {
+      if (document.head.contains(styleSheet)) {
+        document.head.removeChild(styleSheet);
+      }
+      clearTimeout(timer);
+    };
   }, []);
 
   useEffect(() => {
@@ -111,6 +186,18 @@ const SupportPage = () => {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [chatMessages]);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (showChat) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showChat]);
 
   const handleContactSubmit = (e) => {
     e.preventDefault();
@@ -143,14 +230,16 @@ const SupportPage = () => {
       
       setChatMessages([...chatMessages, userMessage]);
       setNewMessage('');
+      setIsTyping(true);
 
       // Simulate auto-reply
       setTimeout(() => {
+        setIsTyping(false);
         const responses = [
-          "I understand. Let me check that for you.",
-          "Thanks for sharing that information. Our team can help with that.",
-          "I'll connect you with a specialist who can assist further.",
-          "That's a great question! Let me provide you with the details."
+          "I understand your concern. Let me help you with that!",
+          "Thanks for reaching out! I'll assist you with your query.",
+          "That's a great question! Here's what you need to know.",
+          "I appreciate your patience. Let me get that information for you."
         ];
         
         const autoReply = {
@@ -168,317 +257,446 @@ const SupportPage = () => {
     setShowChat(true);
   };
 
-  // Inline styles for animations
-  const supportCardStyle = {
-    transition: 'all 0.3s ease'
+  const closeChat = () => {
+    setShowChat(false);
   };
 
-  const resourceCardStyle = {
-    transition: 'all 0.3s ease'
-  };
-
-  const contactItemStyle = {
-    transition: 'all 0.3s ease'
-  };
-
-  const tabContentStyle = {
-    animation: 'fadeIn 0.5s ease-in'
-  };
-
-  const messageTextStyle = {
-    lineHeight: '1.5'
+  const styles = {
+    headerTitle: {
+      fontSize: 'clamp(1.8rem, 5vw, 2.5rem)',
+      fontWeight: 700,
+      background: 'linear-gradient(135deg, #667eea, #764ba2)',
+      WebkitBackgroundClip: 'text',
+      backgroundClip: 'text',
+      color: 'transparent',
+      marginBottom: '1rem',
+    },
+    headerSubtitle: {
+      fontSize: 'clamp(1rem, 3vw, 1.2rem)',
+      color: '#6c757d',
+      maxWidth: '700px',
+      margin: '0 auto',
+    },
+    supportCard: {
+      background: 'white',
+      borderRadius: '20px',
+      padding: '2rem',
+      transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+      boxShadow: '0 5px 20px rgba(0,0,0,0.05)',
+      cursor: 'pointer',
+      position: 'relative',
+      overflow: 'hidden',
+    },
+    tabButton: {
+      padding: '12px 24px',
+      fontSize: 'clamp(0.9rem, 3vw, 1rem)',
+      fontWeight: 600,
+      borderRadius: '50px',
+      transition: 'all 0.3s ease',
+      border: 'none',
+      background: 'transparent',
+    },
+    contactItem: {
+      padding: '1.5rem',
+      borderRadius: '15px',
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      cursor: 'pointer',
+    },
+    resourceCard: {
+      background: 'white',
+      borderRadius: '20px',
+      padding: '1.5rem',
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      boxShadow: '0 5px 20px rgba(0,0,0,0.05)',
+      height: '100%',
+    },
   };
 
   return (
-    <div className="container mt-4">
-      {/* Header Section */}
-      <div className="row">
-        <div className="col-md-12">
-          <div className="text-center mb-5">
-            <h1 className="display-6 fw-semibold text-dark mb-3">Support Center</h1>
-            <p className="lead text-muted">We're here to help you 24/7 with any questions or issues</p>
+    <div className="support-page-wrapper">
+      <div className="container mt-4 mb-5">
+        {/* Header Section */}
+        <div className="row animate-on-scroll">
+          <div className="col-md-12">
+            <div className="text-center mb-5">
+              <h1 style={styles.headerTitle}>Support Center</h1>
+              <p style={styles.headerSubtitle}>We're here to help you 24/7 with any questions or issues</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Quick Help Cards with Animation */}
-      <div className="row mb-5">
-        {[
-          {
-            icon: "fas fa-headset",
-            title: "24/7 Live Chat",
-            desc: "Get instant help from our support team",
-            buttonText: "Start Chat",
-            color: "primary",
-            action: startChat
-          },
-          {
-            icon: "fas fa-phone",
-            title: "Phone Support",
-            desc: "Speak directly with our experts",
-            buttonText: "Call Now",
-            color: "success",
-            action: () => window.open('tel:+919769602148')
-          },
-          {
-            icon: "fas fa-envelope",
-            title: "Email Support",
-            desc: "Get detailed responses within hours",
-            buttonText: "Email Us",
-            color: "info",
-            action: () => window.open('mailto:quicktechrent@gmail.com')
-          }
-        ].map((card, index) => (
-          <div key={index} className="col-md-4 mb-4">
-            <div 
-              className={`card text-center h-100 border-${card.color} shadow-sm support-card ${
-                animatedCards.includes(index) ? 'animate-in' : ''
-              }`}
-              style={{
-                transition: 'all 0.5s ease',
-                transform: animatedCards.includes(index) ? 'translateY(0)' : 'translateY(50px)',
-                opacity: animatedCards.includes(index) ? 1 : 0,
-                ...supportCardStyle
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-5px)';
-                e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = animatedCards.includes(index) ? 'translateY(0)' : 'translateY(50px)';
-                e.currentTarget.style.boxShadow = '';
-              }}
-            >
-              <div className="card-body p-4">
-                <div className={`text-${card.color} mb-3`}>
-                  <i className={`${card.icon} fa-3x`}></i>
+        {/* Quick Help Cards */}
+        <div className="row mb-5">
+          {[
+            {
+              icon: "fas fa-headset",
+              title: "24/7 Live Chat",
+              desc: "Get instant help from our support team",
+              buttonText: "Start Chat",
+              gradient: "linear-gradient(135deg, #667eea, #764ba2)",
+              action: startChat
+            },
+            {
+              icon: "fas fa-phone-alt",
+              title: "Phone Support",
+              desc: "Speak directly with our experts",
+              buttonText: "Call Now",
+              gradient: "linear-gradient(135deg, #f093fb, #f5576c)",
+              action: () => window.open('tel:+919769602148')
+            },
+            {
+              icon: "fas fa-envelope",
+              title: "Email Support",
+              desc: "Get detailed responses within hours",
+              buttonText: "Email Us",
+              gradient: "linear-gradient(135deg, #4facfe, #00f2fe)",
+              action: () => window.open('mailto:quicktechrent@gmail.com')
+            }
+          ].map((card, index) => (
+            <div key={index} className="col-md-4 mb-4 animate-on-scroll">
+              <div 
+                style={{
+                  ...styles.supportCard,
+                  transform: animatedCards.includes(index) ? 'translateY(0)' : 'translateY(50px)',
+                  opacity: animatedCards.includes(index) ? 1 : 0,
+                }}
+                className="support-card clickable-card text-center"
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-8px)';
+                  e.currentTarget.style.boxShadow = '0 15px 35px rgba(0,0,0,0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 5px 20px rgba(0,0,0,0.05)';
+                }}
+              >
+                <div className="text-center">
+                  <div 
+                    style={{
+                      width: '80px',
+                      height: '80px',
+                      background: card.gradient,
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto 1.5rem',
+                      boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                    }}
+                  >
+                    <i className={`${card.icon} fa-2x text-white`}></i>
+                  </div>
+                  <h5 className="fw-semibold mb-2">{card.title}</h5>
+                  <p className="text-muted mb-4">{card.desc}</p>
+                  <button 
+                    className="btn px-4 py-2 text-white"
+                    style={{
+                      background: card.gradient,
+                      borderRadius: '50px',
+                      fontWeight: 600,
+                      transition: 'all 0.3s ease',
+                      border: 'none',
+                    }}
+                    onClick={card.action}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  >
+                    {card.buttonText}
+                  </button>
                 </div>
-                <h5 className="card-title fw-semibold">{card.title}</h5>
-                <p className="card-text text-muted">{card.desc}</p>
-                <button 
-                  className={`btn btn-${card.color} px-4`}
-                  onClick={card.action}
-                >
-                  {card.buttonText}
-                </button>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
 
-      {/* Navigation Tabs */}
-      <div className="row">
-        <div className="col-md-12">
-          <div className="card shadow-sm border-0">
-            <div className="card-header bg-white border-0 py-3">
-              <ul className="nav nav-pills nav-fill">
-                <li className="nav-item">
-                  <button 
-                    className={`nav-link ${activeTab === 'faq' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('faq')}
-                  >
-                    <i className="fas fa-question-circle me-2"></i>
-                    FAQs
-                  </button>
-                </li>
-                <li className="nav-item">
-                  <button 
-                    className={`nav-link ${activeTab === 'contact' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('contact')}
-                  >
-                    <i className="fas fa-envelope me-2"></i>
-                    Contact Form
-                  </button>
-                </li>
-                <li className="nav-item">
-                  <button 
-                    className={`nav-link ${activeTab === 'resources' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('resources')}
-                  >
-                    <i className="fas fa-book me-2"></i>
-                    Resources
-                  </button>
-                </li>
-              </ul>
-            </div>
+        {/* Navigation Tabs */}
+        <div className="row animate-on-scroll">
+          <div className="col-md-12">
+            <div className="card shadow-sm border-0" style={{ borderRadius: '20px', overflow: 'hidden' }}>
+              <div className="card-header bg-white border-0 py-3 px-4">
+                <ul className="nav nav-pills nav-fill gap-2" style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+                  <li className="nav-item">
+                    <button 
+                      className={`nav-link ${activeTab === 'faq' ? 'active' : ''}`}
+                      style={{
+                        ...styles.tabButton,
+                        background: activeTab === 'faq' ? 'linear-gradient(135deg, #667eea, #764ba2)' : 'transparent',
+                        color: activeTab === 'faq' ? 'white' : '#6c757d',
+                      }}
+                      onClick={() => setActiveTab('faq')}
+                    >
+                      <i className="fas fa-question-circle me-2"></i>
+                      FAQs
+                    </button>
+                  </li>
+                  <li className="nav-item">
+                    <button 
+                      className={`nav-link ${activeTab === 'contact' ? 'active' : ''}`}
+                      style={{
+                        ...styles.tabButton,
+                        background: activeTab === 'contact' ? 'linear-gradient(135deg, #667eea, #764ba2)' : 'transparent',
+                        color: activeTab === 'contact' ? 'white' : '#6c757d',
+                      }}
+                      onClick={() => setActiveTab('contact')}
+                    >
+                      <i className="fas fa-envelope me-2"></i>
+                      Contact Form
+                    </button>
+                  </li>
+                  <li className="nav-item">
+                    <button 
+                      className={`nav-link ${activeTab === 'resources' ? 'active' : ''}`}
+                      style={{
+                        ...styles.tabButton,
+                        background: activeTab === 'resources' ? 'linear-gradient(135deg, #667eea, #764ba2)' : 'transparent',
+                        color: activeTab === 'resources' ? 'white' : '#6c757d',
+                      }}
+                      onClick={() => setActiveTab('resources')}
+                    >
+                      <i className="fas fa-book me-2"></i>
+                      Resources
+                    </button>
+                  </li>
+                </ul>
+              </div>
 
-            <div className="card-body p-4">
-              {/* FAQ Tab */}
-              {activeTab === 'faq' && (
-                <div style={tabContentStyle}>
-                  <h3 className="mb-4 text-dark">Frequently Asked Questions</h3>
-                  {faqCategories.map((category, categoryIndex) => (
-                    <div key={categoryIndex} className="mb-4">
-                      <div className="d-flex align-items-center mb-3">
-                        <i className={`${category.icon} text-primary me-3 fa-lg`}></i>
-                        <h4 className="text-primary mb-0">{category.title}</h4>
-                      </div>
-                      <div className="accordion" id={`accordion${categoryIndex}`}>
-                        {category.questions.map((faq, faqIndex) => (
-                          <div key={faqIndex} className="accordion-item border-0 mb-2">
-                            <h2 className="accordion-header">
-                              <button
-                                className="accordion-button collapsed bg-light text-dark fw-semibold"
-                                type="button"
-                                data-bs-toggle="collapse"
-                                data-bs-target={`#collapse${categoryIndex}${faqIndex}`}
-                                style={{borderRadius: '8px'}}
+              <div className="card-body p-4" style={{ backgroundColor: '#f8f9fa' }}>
+                {/* FAQ Tab Content */}
+                {activeTab === 'faq' && (
+                  <div style={{ animation: 'fadeIn 0.5s ease-out' }}>
+                    <h3 className="mb-4" style={{ fontSize: 'clamp(1.5rem, 4vw, 1.8rem)', fontWeight: 600 }}>
+                      Frequently Asked Questions
+                    </h3>
+                    {faqCategories.map((category, categoryIndex) => (
+                      <div key={categoryIndex} className="mb-5">
+                        <div className="d-flex align-items-center mb-3">
+                          <div
+                            style={{
+                              width: '45px',
+                              height: '45px',
+                              background: category.gradient,
+                              borderRadius: '12px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              marginRight: '1rem',
+                            }}
+                          >
+                            <i className={`${category.icon} text-white`}></i>
+                          </div>
+                          <h4 className="mb-0" style={{ fontSize: 'clamp(1.2rem, 3.5vw, 1.4rem)', fontWeight: 600 }}>
+                            {category.title}
+                          </h4>
+                        </div>
+                        <div className="accordion" id={`accordion${categoryIndex}`}>
+                          {category.questions.map((faq, faqIndex) => (
+                            <div key={faqIndex} className="accordion-item border-0 mb-3" style={{ borderRadius: '12px', overflow: 'hidden' }}>
+                              <h2 className="accordion-header">
+                                <button
+                                  className="accordion-button collapsed"
+                                  type="button"
+                                  data-bs-toggle="collapse"
+                                  data-bs-target={`#collapse${categoryIndex}${faqIndex}`}
+                                  style={{
+                                    background: 'white',
+                                    fontWeight: 600,
+                                    padding: '1rem 1.25rem',
+                                    fontSize: 'clamp(0.95rem, 3vw, 1rem)',
+                                    border: 'none',
+                                  }}
+                                >
+                                  <i className="fas fa-question-circle text-primary me-2"></i>
+                                  {faq.question}
+                                </button>
+                              </h2>
+                              <div
+                                id={`collapse${categoryIndex}${faqIndex}`}
+                                className="accordion-collapse collapse"
+                                data-bs-parent={`#accordion${categoryIndex}`}
                               >
-                                <i className="fas fa-question-circle text-primary me-2"></i>
-                                {faq.question}
-                              </button>
-                            </h2>
-                            <div
-                              id={`collapse${categoryIndex}${faqIndex}`}
-                              className="accordion-collapse collapse"
-                              data-bs-parent={`#accordion${categoryIndex}`}
-                            >
-                              <div className="accordion-body bg-white text-muted">
-                                <i className="fas fa-info-circle text-success me-2"></i>
-                                {faq.answer}
+                                <div className="accordion-body" style={{ background: '#f8f9fa', color: '#6c757d', lineHeight: 1.6 }}>
+                                  <i className="fas fa-info-circle text-success me-2"></i>
+                                  {faq.answer}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
 
-              {/* Contact Form Tab */}
-              {activeTab === 'contact' && (
-                <div style={tabContentStyle}>
-                  <div className="row justify-content-center">
-                    <div className="col-lg-8">
-                      <div className="text-center mb-4">
-                        <h3 className="text-dark">Contact Our Support Team</h3>
-                        <p className="text-muted">We'll get back to you within 24 hours</p>
-                      </div>
-                      <form onSubmit={handleContactSubmit}>
-                        <div className="row">
-                          <div className="col-md-6 mb-3">
-                            <label className="form-label fw-semibold">Full Name *</label>
+                {/* Contact Form Tab Content */}
+                {activeTab === 'contact' && (
+                  <div style={{ animation: 'fadeIn 0.5s ease-out' }}>
+                    <div className="row justify-content-center">
+                      <div className="col-lg-8">
+                        <div className="text-center mb-4">
+                          <h3 style={{ fontSize: 'clamp(1.3rem, 4vw, 1.6rem)', fontWeight: 600 }}>Contact Our Support Team</h3>
+                          <p className="text-muted">We'll get back to you within 24 hours</p>
+                        </div>
+                        <form onSubmit={handleContactSubmit}>
+                          <div className="row">
+                            <div className="col-md-6 mb-3">
+                              <label className="form-label fw-semibold">Full Name *</label>
+                              <input
+                                type="text"
+                                className="form-control form-control-lg"
+                                style={{ borderRadius: '12px', border: '1px solid #e0e0e0' }}
+                                name="name"
+                                value={contactForm.name}
+                                onChange={handleContactChange}
+                                required
+                                placeholder="Enter your full name"
+                              />
+                            </div>
+                            <div className="col-md-6 mb-3">
+                              <label className="form-label fw-semibold">Email *</label>
+                              <input
+                                type="email"
+                                className="form-control form-control-lg"
+                                style={{ borderRadius: '12px', border: '1px solid #e0e0e0' }}
+                                name="email"
+                                value={contactForm.email}
+                                onChange={handleContactChange}
+                                required
+                                placeholder="Enter your email"
+                              />
+                            </div>
+                          </div>
+                          <div className="mb-3">
+                            <label className="form-label fw-semibold">Subject *</label>
                             <input
                               type="text"
                               className="form-control form-control-lg"
-                              name="name"
-                              value={contactForm.name}
+                              style={{ borderRadius: '12px', border: '1px solid #e0e0e0' }}
+                              name="subject"
+                              value={contactForm.subject}
                               onChange={handleContactChange}
                               required
-                              placeholder="Enter your full name"
+                              placeholder="Brief subject of your inquiry"
                             />
                           </div>
-                          <div className="col-md-6 mb-3">
-                            <label className="form-label fw-semibold">Email *</label>
-                            <input
-                              type="email"
-                              className="form-control form-control-lg"
-                              name="email"
-                              value={contactForm.email}
+                          <div className="mb-4">
+                            <label className="form-label fw-semibold">Message *</label>
+                            <textarea
+                              className="form-control"
+                              name="message"
+                              rows="5"
+                              style={{ borderRadius: '12px', border: '1px solid #e0e0e0', resize: 'none' }}
+                              value={contactForm.message}
                               onChange={handleContactChange}
+                              placeholder="Please describe your issue or question in detail..."
                               required
-                              placeholder="Enter your email"
-                            />
+                            ></textarea>
                           </div>
-                        </div>
-                        <div className="mb-3">
-                          <label className="form-label fw-semibold">Subject *</label>
-                          <input
-                            type="text"
-                            className="form-control form-control-lg"
-                            name="subject"
-                            value={contactForm.subject}
-                            onChange={handleContactChange}
-                            required
-                            placeholder="Brief subject of your inquiry"
-                          />
-                        </div>
-                        <div className="mb-4">
-                          <label className="form-label fw-semibold">Message *</label>
-                          <textarea
-                            className="form-control"
-                            name="message"
-                            rows="5"
-                            value={contactForm.message}
-                            onChange={handleContactChange}
-                            placeholder="Please describe your issue or question in detail..."
-                            required
-                            style={{resize: 'none'}}
-                          ></textarea>
-                        </div>
-                        <div className="text-center">
-                          <button type="submit" className="btn btn-primary btn-lg px-5">
-                            <i className="fas fa-paper-plane me-2"></i>
-                            Send Message
-                          </button>
-                        </div>
-                      </form>
+                          <div className="text-center">
+                            <button 
+                              type="submit" 
+                              className="btn btn-lg px-5 text-white"
+                              style={{
+                                background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                                borderRadius: '50px',
+                                fontWeight: 600,
+                                border: 'none',
+                                transition: 'all 0.3s ease',
+                              }}
+                            >
+                              <i className="fas fa-paper-plane me-2"></i>
+                              Send Message
+                            </button>
+                          </div>
+                        </form>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Resources Tab */}
-              {activeTab === 'resources' && (
-                <div style={tabContentStyle}>
-                  <h3 className="mb-4 text-dark">Helpful Resources</h3>
-                  <div className="row">
-                    {[
-                      {
-                        icon: "fas fa-download",
-                        title: "Setup Guides",
-                        desc: "Step-by-step guides for setting up your rented laptop and software.",
-                        color: "primary",
-                        buttons: ["Windows Guide", "macOS Guide", "Software Setup"]
-                      },
-                      {
-                        icon: "fas fa-video",
-                        title: "Video Tutorials",
-                        desc: "Watch video tutorials for common tasks and troubleshooting.",
-                        color: "success",
-                        buttons: ["Getting Started", "Troubleshooting", "Advanced Features"]
-                      },
-                      {
-                        icon: "fas fa-file-alt",
-                        title: "Documentation",
-                        desc: "Comprehensive documentation for all our services and policies.",
-                        color: "info",
-                        buttons: ["Rental Policy", "Terms of Service", "Privacy Policy"]
-                      },
-                      {
-                        icon: "fas fa-tools",
-                        title: "Troubleshooting",
-                        desc: "Common issues and their solutions for quick problem resolution.",
-                        color: "warning",
-                        buttons: ["WiFi Issues", "Performance", "Software Problems"]
-                      }
-                    ].map((resource, index) => (
-                      <div key={index} className="col-md-6 mb-4">
-                        <div 
-                          className="card h-100 border-0 shadow-sm resource-card"
-                          style={resourceCardStyle}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = 'translateY(-3px)';
-                            e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.1)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = '';
-                          }}
-                        >
-                          <div className="card-body p-4">
+                {/* Resources Tab Content */}
+                {activeTab === 'resources' && (
+                  <div style={{ animation: 'fadeIn 0.5s ease-out' }}>
+                    <h3 className="mb-4" style={{ fontSize: 'clamp(1.5rem, 4vw, 1.8rem)', fontWeight: 600 }}>Helpful Resources</h3>
+                    <div className="row">
+                      {[
+                        {
+                          icon: "fas fa-download",
+                          title: "Setup Guides",
+                          desc: "Step-by-step guides for setting up your rented laptop and software.",
+                          gradient: "linear-gradient(135deg, #667eea, #764ba2)",
+                          buttons: ["Windows Guide", "macOS Guide", "Software Setup"]
+                        },
+                        {
+                          icon: "fas fa-video",
+                          title: "Video Tutorials",
+                          desc: "Watch video tutorials for common tasks and troubleshooting.",
+                          gradient: "linear-gradient(135deg, #f093fb, #f5576c)",
+                          buttons: ["Getting Started", "Troubleshooting", "Advanced Features"]
+                        },
+                        {
+                          icon: "fas fa-file-alt",
+                          title: "Documentation",
+                          desc: "Comprehensive documentation for all our services and policies.",
+                          gradient: "linear-gradient(135deg, #4facfe, #00f2fe)",
+                          buttons: ["Rental Policy", "Terms of Service", "Privacy Policy"]
+                        },
+                        {
+                          icon: "fas fa-tools",
+                          title: "Troubleshooting",
+                          desc: "Common issues and their solutions for quick problem resolution.",
+                          gradient: "linear-gradient(135deg, #fa709a, #fee140)",
+                          buttons: ["WiFi Issues", "Performance", "Software Problems"]
+                        }
+                      ].map((resource, index) => (
+                        <div key={index} className="col-md-6 mb-4">
+                          <div 
+                            style={styles.resourceCard}
+                            className="resource-card"
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = 'translateY(-5px)';
+                              e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.1)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = '0 5px 20px rgba(0,0,0,0.05)';
+                            }}
+                          >
                             <div className="d-flex align-items-center mb-3">
-                              <i className={`${resource.icon} text-${resource.color} fa-2x me-3`}></i>
-                              <h5 className="card-title mb-0 fw-semibold">{resource.title}</h5>
+                              <div
+                                style={{
+                                  width: '50px',
+                                  height: '50px',
+                                  background: resource.gradient,
+                                  borderRadius: '12px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  marginRight: '1rem',
+                                }}
+                              >
+                                <i className={`${resource.icon} text-white fa-lg`}></i>
+                              </div>
+                              <h5 className="mb-0 fw-semibold">{resource.title}</h5>
                             </div>
-                            <p className="card-text text-muted mb-3">{resource.desc}</p>
+                            <p className="text-muted mb-3">{resource.desc}</p>
                             <div className="d-flex flex-wrap gap-2">
                               {resource.buttons.map((btn, btnIndex) => (
                                 <button 
                                   key={btnIndex}
-                                  className={`btn btn-outline-${resource.color} btn-sm`}
+                                  className="btn btn-sm px-3 py-2"
+                                  style={{
+                                    background: 'white',
+                                    border: `1px solid ${resource.gradient.split(',')[0].split('(')[1] || '#667eea'}`,
+                                    color: resource.gradient.split(',')[0].split('(')[1] || '#667eea',
+                                    borderRadius: '8px',
+                                    transition: 'all 0.3s ease',
+                                  }}
                                 >
                                   {btn}
                                 </button>
@@ -486,142 +704,280 @@ const SupportPage = () => {
                             </div>
                           </div>
                         </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Contact Information */}
+        <div className="row mt-5 animate-on-scroll">
+          <div className="col-md-12">
+            <div className="card border-0 shadow-sm" style={{ borderRadius: '20px', overflow: 'hidden' }}>
+              <div className="card-body p-5">
+                <h4 className="mb-4 text-center" style={{ fontSize: 'clamp(1.3rem, 4vw, 1.6rem)', fontWeight: 600 }}>
+                  Other Ways to Reach Us
+                </h4>
+                <div className="row">
+                  {[
+                    {
+                      icon: "fas fa-envelope",
+                      title: "Email",
+                      detail: "quicktechrent@gmail.com",
+                      subtext: "Response within 2 hours",
+                      gradient: "linear-gradient(135deg, #667eea, #764ba2)"
+                    },
+                    {
+                      icon: "fas fa-phone-alt",
+                      title: "Phone",
+                      detail: "+91 9769602148",
+                      subtext: "24/7 available",
+                      gradient: "linear-gradient(135deg, #f093fb, #f5576c)"
+                    },
+                    {
+                      icon: "fas fa-clock",
+                      title: "Business Hours",
+                      detail: "Mon-Fri: 9AM-6PM IST",
+                      subtext: "Sat: 10AM-4PM IST",
+                      gradient: "linear-gradient(135deg, #4facfe, #00f2fe)"
+                    },
+                    {
+                      icon: "fas fa-map-marker-alt",
+                      title: "Address",
+                      detail: "123 Tech Street",
+                      subtext: "Silicon Valley, Mumbai 400042",
+                      gradient: "linear-gradient(135deg, #fa709a, #fee140)"
+                    }
+                  ].map((contact, index) => (
+                    <div key={index} className="col-md-3 text-center mb-3">
+                      <div 
+                        style={styles.contactItem}
+                        className="contact-item clickable-card"
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'translateY(-5px)';
+                          e.currentTarget.style.background = 'linear-gradient(135deg, #f8f9fa, #ffffff)';
+                          e.currentTarget.style.boxShadow = '0 5px 15px rgba(0,0,0,0.08)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.background = '';
+                          e.currentTarget.style.boxShadow = '';
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: '60px',
+                            height: '60px',
+                            background: contact.gradient,
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            margin: '0 auto 1rem',
+                          }}
+                        >
+                          <i className={`${contact.icon} text-white fa-2x`}></i>
+                        </div>
+                        <h6 className="mb-2 fw-semibold">{contact.title}</h6>
+                        <p className="mb-1 text-dark fw-medium">{contact.detail}</p>
+                        <small className="text-muted">{contact.subtext}</small>
                       </div>
-                    ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Simple Chat Modal */}
+      {showChat && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            zIndex: 99999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          onClick={closeChat}
+        >
+          <div
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '20px',
+              width: '90%',
+              maxWidth: '500px',
+              height: '600px',
+              maxHeight: '80vh',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+              animation: 'modalSlideIn 0.3s ease-out',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div
+              style={{
+                background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                padding: '20px',
+                color: 'white',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div
+                  style={{
+                    backgroundColor: 'white',
+                    borderRadius: '50%',
+                    width: '40px',
+                    height: '40px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <i className="fas fa-headset" style={{ color: '#667eea', fontSize: '20px' }}></i>
+                </div>
+                <div>
+                  <h5 style={{ margin: 0, fontWeight: 'bold' }}>Live Chat Support</h5>
+                  <small style={{ opacity: 0.9 }}>We're online and ready to help</small>
+                </div>
+              </div>
+              <button
+                onClick={closeChat}
+                style={{
+                  background: 'rgba(255,255,255,0.2)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '32px',
+                  height: '32px',
+                  cursor: 'pointer',
+                  color: 'white',
+                  fontSize: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Messages Area */}
+            <div
+              ref={chatContainerRef}
+              style={{
+                flex: 1,
+                overflowY: 'auto',
+                padding: '20px',
+                backgroundColor: '#f8f9fa',
+              }}
+            >
+              {chatMessages.map((message) => (
+                <div
+                  key={message.id}
+                  style={{
+                    display: 'flex',
+                    justifyContent: message.sender === 'user' ? 'flex-end' : 'flex-start',
+                    marginBottom: '12px',
+                  }}
+                >
+                  <div
+                    style={{
+                      maxWidth: '70%',
+                      padding: '10px 15px',
+                      borderRadius: message.sender === 'user' ? '18px 18px 5px 18px' : '18px 18px 18px 5px',
+                      backgroundColor: message.sender === 'user' ? '#667eea' : 'white',
+                      color: message.sender === 'user' ? 'white' : '#333',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                    }}
+                  >
+                    <div style={{ fontSize: '14px', lineHeight: 1.4 }}>{message.text}</div>
+                    <div
+                      style={{
+                        fontSize: '10px',
+                        marginTop: '5px',
+                        opacity: 0.7,
+                        color: message.sender === 'user' ? 'rgba(255,255,255,0.8)' : '#999',
+                      }}
+                    >
+                      {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {isTyping && (
+                <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '12px' }}>
+                  <div
+                    style={{
+                      backgroundColor: 'white',
+                      padding: '10px 15px',
+                      borderRadius: '18px',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                      <span style={{ animation: 'pulse 1s infinite' }}>•</span>
+                      <span style={{ animation: 'pulse 1s infinite 0.2s' }}>•</span>
+                      <span style={{ animation: 'pulse 1s infinite 0.4s' }}>•</span>
+                    </div>
                   </div>
                 </div>
               )}
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Contact Information - Updated to White Box */}
-      <div className="row mt-5">
-        <div className="col-md-12">
-          <div className="card bg-white border shadow-sm">
-            <div className="card-body p-5">
-              <h4 className="mb-4 text-center text-dark">Other Ways to Reach Us</h4>
-              <div className="row">
-                {[
-                  {
-                    icon: "fas fa-envelope text-primary",
-                    title: "Email",
-                    detail: "quicktechrent@gmail.com",
-                    subtext: "Response within 2 hours"
-                  },
-                  {
-                    icon: "fas fa-phone text-success",
-                    title: "Phone",
-                    detail: "+91 9769602148",
-                    subtext: "24/7 available"
-                  },
-                  {
-                    icon: "fas fa-clock text-info",
-                    title: "Business Hours",
-                    detail: "Mon-Fri: 9AM-6PM IST",
-                    subtext: "Sat: 10AM-4PM IST"
-                  },
-                  {
-                    icon: "fas fa-map-marker-alt text-warning",
-                    title: "Address",
-                    detail: "123 Tech Street",
-                    subtext: "Silicon Valley, Mumbai 400042"
-                  }
-                ].map((contact, index) => (
-                  <div key={index} className="col-md-3 text-center mb-3">
-                    <div 
-                      className="contact-item p-3 rounded"
-                      style={contactItemStyle}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = '#f8f9fa';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = '';
-                      }}
-                    >
-                      <i className={`${contact.icon} fa-2x mb-3`}></i>
-                      <h6 className="mb-2 text-dark">{contact.title}</h6>
-                      <p className="mb-1 fw-semibold text-dark">{contact.detail}</p>
-                      <small className="text-muted">{contact.subtext}</small>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Live Chat Modal */}
-      {showChat && (
-        <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,0.5)'}}>
-          <div className="modal-dialog modal-dialog-centered modal-lg">
-            <div className="modal-content border-0 shadow-lg">
-              <div className="modal-header bg-primary text-white border-0">
-                <div className="d-flex align-items-center">
-                  <div className="bg-white rounded-circle p-2 me-3">
-                    <i className="fas fa-headset text-primary fa-lg"></i>
-                  </div>
-                  <div>
-                    <h5 className="modal-title mb-0">Live Chat Support</h5>
-                    <small className="opacity-75">We're online and ready to help</small>
-                  </div>
-                </div>
-                <button 
-                  type="button" 
-                  className="btn-close btn-close-white"
-                  onClick={() => setShowChat(false)}
-                ></button>
-              </div>
-              <div 
-                ref={chatContainerRef}
-                className="modal-body p-4" 
-                style={{height: '400px', overflowY: 'auto', backgroundColor: '#f8f9fa'}}
-              >
-                {chatMessages.map(message => (
-                  <div 
-                    key={message.id} 
-                    className={`d-flex mb-3 ${
-                      message.sender === 'user' ? 'justify-content-end' : 'justify-content-start'
-                    }`}
-                  >
-                    <div 
-                      className={`p-3 rounded-3 ${
-                        message.sender === 'user' 
-                          ? 'bg-primary text-white' 
-                          : 'bg-white border text-dark shadow-sm'
-                      }`}
-                      style={{ maxWidth: '70%' }}
-                    >
-                      <div style={messageTextStyle}>{message.text}</div>
-                      <div 
-                        className={`small mt-1 ${
-                          message.sender === 'user' ? 'text-white-50' : 'text-muted'
-                        }`}
-                      >
-                        {message.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="modal-footer border-0 bg-light">
-                <form onSubmit={handleSendMessage} className="w-100">
-                  <div className="input-group input-group-lg">
-                    <input
-                      type="text"
-                      className="form-control border-primary"
-                      placeholder="Type your message here..."
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                    />
-                    <button className="btn btn-primary px-4" type="submit">
-                      <i className="fas fa-paper-plane"></i>
-                    </button>
-                  </div>
-                </form>
-              </div>
+            {/* Input Area */}
+            <div
+              style={{
+                padding: '15px',
+                borderTop: '1px solid #e0e0e0',
+                backgroundColor: 'white',
+              }}
+            >
+              <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '10px' }}>
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Type your message..."
+                  style={{
+                    flex: 1,
+                    padding: '10px 15px',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '25px',
+                    fontSize: '14px',
+                    outline: 'none',
+                  }}
+                />
+                <button
+                  type="submit"
+                  style={{
+                    background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                    border: 'none',
+                    borderRadius: '25px',
+                    padding: '10px 20px',
+                    color: 'white',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  Send
+                </button>
+              </form>
             </div>
           </div>
         </div>
