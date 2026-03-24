@@ -9,12 +9,42 @@ dotenv.config();
 
 const app = express();
 
-// Middleware
+// ✅ UPDATED CORS configuration - Allow your Netlify frontend
+const allowedOrigins = [
+  'http://localhost:3000',                           // Local development
+  'https://quick-tech-rent-001.netlify.app',        // Your first Netlify site
+  'https://quick-tech-rent-002.netlify.app',        // Your current Netlify site (FIXED)
+  'https://quick-tech-rent-003.netlify.app',        // Future previews
+  process.env.FRONTEND_URL                          // Optional: if you set this in Render env
+].filter(Boolean); // Remove any undefined values
+
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://quick-tech-rent-001.netlify.app'],
-  credentials: true
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('Blocked origin:', origin);
+      callback(null, false); // Changed from error to false to avoid CORS error in console
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
+
 app.use(bodyParser.json());
+
+// Health check endpoint (useful for testing)
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    message: 'Backend is running',
+    allowedOrigins: allowedOrigins
+  });
+});
 
 // Initialize Razorpay
 const razorpay = new Razorpay({
@@ -27,14 +57,18 @@ app.post('/api/create-order', async (req, res) => {
   try {
     const { amount, currency = 'INR', receipt } = req.body;
 
+    console.log('Creating order for amount:', amount, 'currency:', currency);
+
     const options = {
-      amount: amount * 100, // Convert to paise
+      amount: Math.round(amount * 100), // Convert to paise and ensure integer
       currency,
       receipt: receipt || `receipt_${Date.now()}`,
       payment_capture: 1 // Auto capture payment
     };
 
     const order = await razorpay.orders.create(options);
+    
+    console.log('Order created successfully:', order.id);
     
     res.status(200).json({
       success: true,
@@ -103,5 +137,7 @@ app.get('/api/payment/:paymentId', async (req, res) => {
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`✅ CORS allowed origins:`, allowedOrigins);
+  console.log(`💰 Razorpay initialized with key: ${process.env.RAZORPAY_KEY_ID?.substring(0, 10)}...`);
 });
