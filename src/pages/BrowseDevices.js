@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import DeviceCard from '../components/DeviceCard';
 import FilterSection from '../components/FilterSection';
+import Toast from '../components/Toast';
 
 const BrowseDevices = ({ devices, addToCart }) => {
   const [filteredDevices, setFilteredDevices] = useState(devices);
@@ -17,6 +18,10 @@ const BrowseDevices = ({ devices, addToCart }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [animateIn, setAnimateIn] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastDuration, setToastDuration] = useState(7);
+  const [toastPrice, setToastPrice] = useState(0);
 
   // Extract unique values for filters from actual devices
   const brands = [...new Set(devices.map(device => device.brand))];
@@ -138,6 +143,34 @@ const BrowseDevices = ({ devices, addToCart }) => {
     setShowFilters(!showFilters);
   };
 
+  // Enhanced add to cart handler with toast notification
+  const handleAddToCart = (device, rentalDuration = 7) => {
+    if (!device || !device.available) return;
+    
+    // Add haptic feedback for mobile devices
+    if (window.navigator && window.navigator.vibrate) {
+      window.navigator.vibrate(50);
+    }
+    
+    const totalPrice = device.price * rentalDuration;
+    const deviceWithDuration = { 
+      ...device, 
+      rentalDuration,
+      totalPrice: totalPrice
+    };
+    addToCart(deviceWithDuration);
+    
+    setToastMessage(`${device.name} added to cart! 🛒`);
+    setToastDuration(rentalDuration);
+    setToastPrice(totalPrice);
+    setShowToast(true);
+    
+    // Auto-hide toast after 3 seconds
+    setTimeout(() => {
+      setShowToast(false);
+    }, 3000);
+  };
+
   return (
     <div className={`browse-container ${animateIn ? 'fade-in' : ''}`}>
       <style>
@@ -186,6 +219,7 @@ const BrowseDevices = ({ devices, addToCart }) => {
             min-height: 100vh;
             background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
             padding: 2rem 1rem;
+            position: relative;
           }
 
           .fade-in {
@@ -470,6 +504,15 @@ const BrowseDevices = ({ devices, addToCart }) => {
       </style>
 
       <div className="container">
+        {/* Toast Component - Rendered at document.body level */}
+        <Toast 
+          show={showToast}
+          message={toastMessage}
+          duration={toastDuration}
+          price={toastPrice}
+          onClose={() => setShowToast(false)}
+        />
+
         {/* Header Section */}
         <div className="text-center mb-5 slide-in-up">
           <h1 style={{ 
@@ -593,7 +636,10 @@ const BrowseDevices = ({ devices, addToCart }) => {
                     className="device-card-wrapper"
                     style={{ animationDelay: `${index * 0.05}s` }}
                   >
-                    <DeviceCard device={device} addToCart={addToCart} />
+                    <DeviceCard 
+                      device={device} 
+                      addToCart={() => handleAddToCart(device)} 
+                    />
                   </div>
                 ))}
               </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const ProductPage = ({ devices, addToCart, isLoading = false }) => {
   const { id } = useParams();
@@ -11,6 +12,7 @@ const ProductPage = ({ devices, addToCart, isLoading = false }) => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [animateIn, setAnimateIn] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [toastMessage, setToastMessage] = useState('');
 
   useEffect(() => {
     setAnimateIn(true);
@@ -45,6 +47,11 @@ const ProductPage = ({ devices, addToCart, isLoading = false }) => {
   const handleAddToCart = () => {
     if (!device || !device.available) return;
     
+    // Add haptic feedback for mobile devices
+    if (window.navigator && window.navigator.vibrate) {
+      window.navigator.vibrate(50);
+    }
+    
     const deviceWithDuration = { 
       ...device, 
       rentalDuration,
@@ -52,8 +59,13 @@ const ProductPage = ({ devices, addToCart, isLoading = false }) => {
     };
     addToCart(deviceWithDuration);
     
+    setToastMessage(`${device.name} added to cart! 🛒`);
     setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
+    
+    // Auto-hide toast after 3 seconds
+    setTimeout(() => {
+      setShowSuccess(false);
+    }, 3000);
   };
 
   const handleRentalDurationChange = (value) => {
@@ -209,6 +221,17 @@ const ProductPage = ({ devices, addToCart, isLoading = false }) => {
             }
           }
           
+          @keyframes slideInUp {
+            from {
+              opacity: 0;
+              transform: translateY(30px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          
           @keyframes scaleIn {
             from {
               opacity: 0;
@@ -243,6 +266,10 @@ const ProductPage = ({ devices, addToCart, isLoading = false }) => {
             animation: slideInRight 0.5s ease-out;
           }
           
+          .slide-in-up {
+            animation: slideInUp 0.5s ease-out;
+          }
+          
           .scale-in {
             animation: scaleIn 0.4s ease-out;
           }
@@ -259,6 +286,7 @@ const ProductPage = ({ devices, addToCart, isLoading = false }) => {
             align-items: center;
             gap: 8px;
             text-decoration: none;
+            cursor: pointer;
           }
           
           .btn-gradient-primary:hover {
@@ -279,6 +307,7 @@ const ProductPage = ({ devices, addToCart, isLoading = false }) => {
             align-items: center;
             gap: 8px;
             text-decoration: none;
+            cursor: pointer;
           }
           
           .btn-outline-gradient:hover {
@@ -357,16 +386,6 @@ const ProductPage = ({ devices, addToCart, isLoading = false }) => {
             transform: scale(1.2);
           }
           
-          .success-toast {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
-            animation: slideInRight 0.3s ease-out;
-            max-width: 350px;
-            width: 90%;
-          }
-          
           @media (max-width: 768px) {
             .product-page-container {
               padding: 1rem;
@@ -381,13 +400,6 @@ const ProductPage = ({ devices, addToCart, isLoading = false }) => {
             .btn-outline-gradient {
               padding: 10px 20px;
               font-size: 14px;
-            }
-            
-            .success-toast {
-              top: 10px;
-              right: 10px;
-              left: 10px;
-              max-width: none;
             }
           }
           
@@ -404,19 +416,141 @@ const ProductPage = ({ devices, addToCart, isLoading = false }) => {
       </style>
 
       <div className="container">
-        {/* Success Toast */}
-        {showSuccess && (
-          <div className="success-toast alert alert-success border-0 shadow-lg">
-            <div className="d-flex align-items-center">
-              <i className="fas fa-check-circle fa-lg me-3"></i>
-              <div className="flex-grow-1">
-                <strong className="d-block">Added to Cart!</strong>
-                <small>{device.name} for {rentalDuration} days</small>
+        {/* Enhanced Toast Notification - No Undo Button */}
+        <AnimatePresence>
+          {showSuccess && (
+            <motion.div
+              role="alert"
+              aria-live="polite"
+              initial={{ opacity: 0, x: 50, scale: 0.9 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 50, scale: 0.9 }}
+              transition={{ duration: 0.3, type: "spring", damping: 20 }}
+              style={{
+                position: 'fixed',
+                top: '20px',
+                right: '20px',
+                zIndex: 9999,
+                maxWidth: '400px',
+                width: '90%',
+              }}
+            >
+              <div style={{
+                background: 'white',
+                borderRadius: '16px',
+                padding: '16px 20px',
+                boxShadow: '0 20px 40px -12px rgba(0,0,0,0.25), 0 8px 24px -8px rgba(0,0,0,0.15)',
+                borderLeft: '4px solid #10b981',
+                position: 'relative',
+                overflow: 'hidden',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <motion.div
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ type: "spring", delay: 0.1 }}
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      background: '#D1FAE5',
+                      borderRadius: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '20px',
+                    }}
+                  >
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 0.2, type: "spring" }}
+                    >
+                      🛒
+                    </motion.span>
+                  </motion.div>
+                  <div style={{ flex: 1 }}>
+                    <motion.h4 
+                      initial={{ x: -20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: 0.15 }}
+                      style={{ margin: 0, fontSize: '14px', fontWeight: 'bold', color: '#1F2937' }}
+                    >
+                      Added to Cart!
+                    </motion.h4>
+                    <motion.p 
+                      initial={{ x: -20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: 0.2 }}
+                      style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#6B7280' }}
+                    >
+                      {toastMessage}
+                    </motion.p>
+                    <motion.p 
+                      initial={{ x: -20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: 0.25 }}
+                      style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#10b981', fontWeight: 500 }}
+                    >
+                      {rentalDuration} days • ₹{discountedTotal}
+                    </motion.p>
+                  </div>
+                  <motion.button
+                    whileHover={{ scale: 1.1, rotate: 90 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setShowSuccess(false)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      fontSize: '18px',
+                      cursor: 'pointer',
+                      color: '#9CA3AF',
+                      padding: '4px',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    ✕
+                  </motion.button>
+                </div>
+                
+                {/* View Cart Button */}
+                <Link to="/cart" style={{ textDecoration: 'none' }}>
+                  <motion.div
+                    whileHover={{ scale: 1.02, backgroundColor: '#5a67d8' }}
+                    whileTap={{ scale: 0.98 }}
+                    style={{
+                      marginTop: '12px',
+                      background: '#667eea',
+                      borderRadius: '12px',
+                      padding: '10px',
+                      textAlign: 'center',
+                      color: 'white',
+                      fontSize: '13px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    View Cart →
+                  </motion.div>
+                </Link>
+                
+                {/* Progress bar for auto-dismiss */}
+                <motion.div
+                  initial={{ width: '100%' }}
+                  animate={{ width: '0%' }}
+                  transition={{ duration: 3, ease: 'linear' }}
+                  style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    height: '3px',
+                    background: '#10b981',
+                  }}
+                />
               </div>
-              <button type="button" className="btn-close" onClick={() => setShowSuccess(false)}></button>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Breadcrumb */}
         <div className="mb-4 slide-in-left">
@@ -593,13 +727,15 @@ const ProductPage = ({ devices, addToCart, isLoading = false }) => {
                   </div>
 
                   <div className="d-grid gap-3">
-                    <button 
+                    <motion.button 
                       className="btn-gradient-primary w-100 justify-content-center py-3"
                       onClick={handleAddToCart}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                     >
                       <i className="fas fa-cart-plus me-2"></i>
                       Add to Cart - ₹{discountedTotal}
-                    </button>
+                    </motion.button>
                     <Link to="/browse" className="btn-outline-gradient w-100 justify-content-center">
                       <i className="fas fa-laptop me-2"></i>
                       Continue Shopping

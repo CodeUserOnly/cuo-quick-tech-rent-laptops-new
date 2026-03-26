@@ -132,7 +132,7 @@ const Header = ({ user, cartCount, logoutUser }) => {
         }
 
         /* Desktop Navigation */
-        .quicktech-header .nav-menu {
+        .quicktech-header .desktop-nav {
           display: flex;
           align-items: center;
           gap: 20px;
@@ -229,7 +229,7 @@ const Header = ({ user, cartCount, logoutUser }) => {
           color: white;
         }
 
-        /* Sign Up Button - Fixed Hover Effect */
+        /* Sign Up Button */
         .quicktech-header .btn-signup {
           background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
           color: white !important;
@@ -250,7 +250,7 @@ const Header = ({ user, cartCount, logoutUser }) => {
           transition: transform 0.05s;
         }
 
-        /* Admin Link Styles */
+        /* Admin Link Styles - Desktop */
         .quicktech-header .admin-link {
           background: #f3e8ff;
           color: #8b5cf6;
@@ -261,72 +261,30 @@ const Header = ({ user, cartCount, logoutUser }) => {
           color: #7c3aed;
         }
 
-        /* Mobile Menu Button */
+        /* Mobile Elements - Hidden on Desktop */
+        .quicktech-header .mobile-right-section {
+          display: none;
+        }
+
+        .quicktech-header .mobile-cart-btn {
+          display: none;
+        }
+
         .quicktech-header .mobile-toggle {
           display: none;
-          background: none;
-          border: none;
-          cursor: pointer;
-          width: 44px;
-          height: 44px;
-          position: relative;
-          border-radius: 8px;
-          transition: all 0.2s ease;
-          flex-shrink: 0;
-          z-index: 1002;
-          align-items: center;
-          justify-content: center;
         }
 
-        .quicktech-header .hamburger {
-          position: relative;
-          display: block;
-          width: 22px;
-          height: 2px;
-          background: #1f2937;
-          transition: all 0.2s ease;
+        .quicktech-header .mobile-nav-menu {
+          display: none;
         }
 
-        .quicktech-header .hamburger::before,
-        .quicktech-header .hamburger::after {
-          content: '';
-          position: absolute;
-          width: 22px;
-          height: 2px;
-          background: #1f2937;
-          left: 0;
-          transition: all 0.2s ease;
-        }
-
-        .quicktech-header .hamburger::before {
-          top: -7px;
-        }
-
-        .quicktech-header .hamburger::after {
-          bottom: -7px;
-        }
-
-        .quicktech-header .mobile-toggle.active .hamburger {
-          background: transparent;
-        }
-
-        .quicktech-header .mobile-toggle.active .hamburger::before {
-          transform: rotate(45deg);
-          top: 0;
-        }
-
-        .quicktech-header .mobile-toggle.active .hamburger::after {
-          transform: rotate(-45deg);
-          bottom: 0;
-        }
-
-        /* Laptop Responsive - Prevent Text Wrapping and Button Touching */
+        /* Laptop Responsive */
         @media (max-width: 1100px) {
           .quicktech-header .container {
             padding: 0 20px;
           }
           
-          .quicktech-header .nav-menu {
+          .quicktech-header .desktop-nav {
             gap: 12px;
           }
           
@@ -349,7 +307,7 @@ const Header = ({ user, cartCount, logoutUser }) => {
             padding: 0 16px;
           }
           
-          .quicktech-header .nav-menu {
+          .quicktech-header .desktop-nav {
             gap: 8px;
           }
           
@@ -398,12 +356,12 @@ const Header = ({ user, cartCount, logoutUser }) => {
             font-size: 11px;
           }
           
-          .quicktech-header .nav-menu {
+          .quicktech-header .desktop-nav {
             gap: 6px;
           }
         }
 
-        /* Mobile Menu - Optimized for Android with LEFT ALIGNMENT */
+        /* Mobile Styles */
         @media (max-width: 768px) {
           .quicktech-header .container {
             height: 56px;
@@ -427,18 +385,114 @@ const Header = ({ user, cartCount, logoutUser }) => {
             font-size: 10px;
           }
 
+          /* Hide Desktop Navigation on Mobile */
+          .quicktech-header .desktop-nav {
+            display: none;
+          }
+
+          /* Show Mobile Elements */
+          .quicktech-header .mobile-right-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+          }
+
+          .quicktech-header .mobile-cart-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+          }
+
+          .quicktech-header .mobile-cart-btn i {
+            font-size: 22px;
+            color: #4b5563;
+          }
+
+          .quicktech-header .mobile-cart-count {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: #ef4444;
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 5px;
+            line-height: 1;
+          }
+
           .quicktech-header .mobile-toggle {
             display: flex;
+            background: none;
+            border: none;
+            cursor: pointer;
+            width: 44px;
+            height: 44px;
+            position: relative;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+            align-items: center;
+            justify-content: center;
           }
 
-          /* Hide desktop navigation */
-          .quicktech-header .nav-links,
-          .quicktech-header .user-nav {
-            display: flex;
+          .quicktech-header .hamburger {
+            position: relative;
+            display: block;
+            width: 22px;
+            height: 2px;
+            background: #1f2937;
+            transition: all 0.2s ease;
           }
 
-          /* Sidebar Menu - LEFT ALIGNED for Android */
-          .quicktech-header .nav-menu {
+          .quicktech-header .hamburger::before,
+          .quicktech-header .hamburger::after {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 2px;
+            background: #1f2937;
+            left: 0;
+            transition: all 0.2s ease;
+          }
+
+          .quicktech-header .hamburger::before {
+            top: -7px;
+          }
+
+          .quicktech-header .hamburger::after {
+            bottom: -7px;
+          }
+
+          .quicktech-header .mobile-toggle.active .hamburger {
+            background: transparent;
+          }
+
+          .quicktech-header .mobile-toggle.active .hamburger::before {
+            transform: rotate(45deg);
+            top: 0;
+          }
+
+          .quicktech-header .mobile-toggle.active .hamburger::after {
+            transform: rotate(-45deg);
+            bottom: 0;
+          }
+
+          /* Mobile Navigation Menu */
+          .quicktech-header .mobile-nav-menu {
             position: fixed;
             top: 0;
             left: -100%;
@@ -447,6 +501,7 @@ const Header = ({ user, cartCount, logoutUser }) => {
             max-width: 85%;
             height: 100vh;
             background: #ffffff;
+            display: flex;
             flex-direction: column;
             align-items: flex-start;
             justify-content: flex-start;
@@ -459,113 +514,94 @@ const Header = ({ user, cartCount, logoutUser }) => {
             overflow-x: hidden;
           }
 
-          .quicktech-header .nav-menu.active {
+          .quicktech-header .mobile-nav-menu.active {
             left: 0;
           }
 
-          /* Smooth scroll for Android */
-          .quicktech-header .nav-menu::-webkit-scrollbar {
-            width: 4px;
-          }
-
-          .quicktech-header .nav-menu::-webkit-scrollbar-track {
-            background: #f1f1f1;
-          }
-
-          .quicktech-header .nav-menu::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 4px;
-          }
-
-          /* Left align all content */
-          .quicktech-header .nav-links,
-          .quicktech-header .user-nav {
+          .quicktech-header .mobile-nav-links,
+          .quicktech-header .mobile-user-links {
             flex-direction: column;
             width: 100%;
             gap: 8px;
             margin-left: 0;
             align-items: flex-start;
+            list-style: none;
           }
 
-          .quicktech-header .nav-link {
-            width: 100%;
-            padding: 12px 16px;
-            justify-content: space-between;
-            font-size: 16px;
-            border-radius: 12px;
-            text-align: left;
-            white-space: normal;
-            position: relative;
-          }
-
-          .quicktech-header .nav-link span:first-of-type {
-            white-space: normal;
-            text-align: left;
-            flex: 1;
-          }
-
-          .quicktech-header .nav-link i {
-            font-size: 18px;
-            width: 24px;
-            margin-right: 12px;
-            flex-shrink: 0;
-          }
-
-          /* Cart Styles - Mobile Sidebar */
-          .quicktech-header .cart-wrapper {
-            width: 100%;
-          }
-
-          .quicktech-header .cart-wrapper .nav-link {
+          .quicktech-header .mobile-nav-link {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            position: relative;
+            gap: 12px;
+            padding: 12px 16px;
+            text-decoration: none;
+            color: #4b5563;
+            font-size: 16px;
+            font-weight: 500;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
           }
 
-          .quicktech-header .cart-wrapper .cart-count {
-            position: relative;
-            top: auto;
-            right: auto;
-            margin-left: auto;
-            background: #ef4444;
-            color: white;
-            font-size: 12px;
-            font-weight: 700;
-            min-width: 24px;
-            height: 24px;
-            border-radius: 12px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0 6px;
-            line-height: 1;
+          .quicktech-header .mobile-nav-link i {
+            font-size: 18px;
+            width: 24px;
             flex-shrink: 0;
           }
 
-          /* Sign Up Button on Mobile */
-          .quicktech-header .btn-signup {
+          .quicktech-header .mobile-nav-link:hover {
+            background: #f3f4f6;
+          }
+
+          .quicktech-header .mobile-nav-link.active {
+            color: #2563eb;
+            background: #eff6ff;
+          }
+
+          /* Mobile Admin Link Styles */
+          .quicktech-header .mobile-admin-link {
+            background: #f3e8ff;
+            color: #8b5cf6 !important;
+          }
+
+          .quicktech-header .mobile-admin-link:hover {
+            background: #e9d5ff;
+            color: #7c3aed !important;
+          }
+
+          .quicktech-header .mobile-admin-link i {
+            color: #8b5cf6;
+          }
+
+          /* Mobile Sign Up Button */
+          .quicktech-header .mobile-signup {
             background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
             color: white !important;
             justify-content: center;
           }
 
-          .quicktech-header .btn-signup:hover {
+          .quicktech-header .mobile-signup:hover {
             background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
             color: white !important;
           }
 
-          .quicktech-header .btn-logout {
+          /* Mobile Logout Button */
+          .quicktech-header .mobile-logout {
+            background: #fee2e2;
+            color: #dc2626 !important;
             justify-content: center;
           }
 
-          /* Ensure all text is left aligned */
-          .quicktech-header .nav-link span {
-            text-align: left;
+          .quicktech-header .mobile-logout:hover {
+            background: #dc2626;
+            color: white !important;
           }
         }
 
-        /* Android Overlay */
+        /* Mobile Overlay */
         .quicktech-header .mobile-overlay {
           position: fixed;
           top: 0;
@@ -587,7 +623,9 @@ const Header = ({ user, cartCount, logoutUser }) => {
         /* Android Touch Optimizations */
         @media (hover: none) and (pointer: coarse) {
           .quicktech-header .nav-link:active,
-          .quicktech-header .mobile-toggle:active {
+          .quicktech-header .mobile-toggle:active,
+          .quicktech-header .mobile-cart-btn:active,
+          .quicktech-header .mobile-nav-link:active {
             transform: scale(0.96);
             transition: transform 0.05s;
             opacity: 0.7;
@@ -595,17 +633,21 @@ const Header = ({ user, cartCount, logoutUser }) => {
           
           .quicktech-header .nav-link,
           .quicktech-header .mobile-toggle,
-          .quicktech-header .logo-link {
+          .quicktech-header .logo-link,
+          .quicktech-header .mobile-cart-btn,
+          .quicktech-header .mobile-nav-link {
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
           }
 
           /* Better touch targets */
-          .quicktech-header .nav-link {
+          .quicktech-header .nav-link,
+          .quicktech-header .mobile-nav-link {
             min-height: 48px;
           }
 
-          .quicktech-header .mobile-toggle {
+          .quicktech-header .mobile-toggle,
+          .quicktech-header .mobile-cart-btn {
             min-width: 48px;
             min-height: 48px;
           }
@@ -626,36 +668,33 @@ const Header = ({ user, cartCount, logoutUser }) => {
             white-space: nowrap;
           }
 
-          .quicktech-header .nav-menu {
+          .quicktech-header .mobile-nav-menu {
             width: 260px;
             padding: 70px 16px 20px;
           }
 
-          .quicktech-header .nav-link {
+          .quicktech-header .mobile-nav-link {
             padding: 10px 14px;
             font-size: 15px;
           }
 
-          .quicktech-header .cart-wrapper .cart-count {
-            min-width: 22px;
-            height: 22px;
-            font-size: 11px;
-            padding: 0 5px;
+          .quicktech-header .mobile-cart-btn i {
+            font-size: 20px;
           }
         }
 
         /* Landscape mode optimization */
         @media (max-width: 768px) and (orientation: landscape) {
-          .quicktech-header .nav-menu {
+          .quicktech-header .mobile-nav-menu {
             padding: 60px 20px 20px;
           }
 
-          .quicktech-header .nav-links,
-          .quicktech-header .user-nav {
+          .quicktech-header .mobile-nav-links,
+          .quicktech-header .mobile-user-links {
             gap: 4px;
           }
 
-          .quicktech-header .nav-link {
+          .quicktech-header .mobile-nav-link {
             padding: 8px 16px;
           }
         }
@@ -675,93 +714,54 @@ const Header = ({ user, cartCount, logoutUser }) => {
               </Link>
             </div>
 
-            {/* Mobile Toggle Button */}
-            <button 
-              className={`mobile-toggle ${mobileMenuOpen ? 'active' : ''}`}
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label="Menu"
-            >
-              <span className="hamburger"></span>
-            </button>
-
-            {/* Navigation Menu - Sidebar for Mobile */}
-            <div className={`nav-menu ${mobileMenuOpen ? 'active' : ''}`}>
-              {/* Main Navigation */}
+            {/* Desktop Navigation - Only visible on desktop */}
+            <div className="desktop-nav">
               <ul className="nav-links">
                 <li className="nav-item">
-                  <Link 
-                    to="/" 
-                    className={`nav-link ${isActive('/') ? 'active' : ''}`}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
+                  <Link to="/" className={`nav-link ${isActive('/') ? 'active' : ''}`}>
                     <i className="fas fa-home"></i>
                     <span>Home</span>
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link 
-                    to="/browse" 
-                    className={`nav-link ${isActive('/browse') ? 'active' : ''}`}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
+                  <Link to="/browse" className={`nav-link ${isActive('/browse') ? 'active' : ''}`}>
                     <i className="fas fa-laptop"></i>
                     <span>Browse</span>
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link 
-                    to="/support" 
-                    className={`nav-link ${isActive('/support') ? 'active' : ''}`}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
+                  <Link to="/support" className={`nav-link ${isActive('/support') ? 'active' : ''}`}>
                     <i className="fas fa-headset"></i>
                     <span>Support</span>
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link 
-                    to="/about" 
-                    className={`nav-link ${isActive('/about') ? 'active' : ''}`}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
+                  <Link to="/about" className={`nav-link ${isActive('/about') ? 'active' : ''}`}>
                     <i className="fas fa-info-circle"></i>
                     <span>About</span>
                   </Link>
                 </li>
               </ul>
 
-              {/* User Navigation */}
               <ul className="user-nav">
                 {user ? (
                   <>
                     {user.role === 'admin' && (
                       <li className="nav-item">
-                        <Link 
-                          to="/admin" 
-                          className={`nav-link admin-link ${isActive('/admin') ? 'active' : ''}`}
-                          onClick={() => setMobileMenuOpen(false)}
-                        >
+                        <Link to="/admin" className={`nav-link admin-link ${isActive('/admin') ? 'active' : ''}`}>
                           <i className="fas fa-cog"></i>
                           <span>Admin</span>
                         </Link>
                       </li>
                     )}
                     <li className="nav-item">
-                      <Link 
-                        to="/dashboard" 
-                        className={`nav-link ${isActive('/dashboard') ? 'active' : ''}`}
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
+                      <Link to="/dashboard" className={`nav-link ${isActive('/dashboard') ? 'active' : ''}`}>
                         <i className="fas fa-user-circle"></i>
                         <span>Dashboard</span>
                       </Link>
                     </li>
                     <li className="nav-item cart-wrapper">
-                      <Link 
-                        to="/cart" 
-                        className="nav-link"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
+                      <Link to="/cart" className="nav-link">
                         <i className="fas fa-shopping-cart"></i>
                         <span>Cart</span>
                         {cartCount > 0 && (
@@ -772,8 +772,134 @@ const Header = ({ user, cartCount, logoutUser }) => {
                       </Link>
                     </li>
                     <li className="nav-item">
+                      <button className="nav-link btn-logout" onClick={logoutUser}>
+                        <i className="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                      </button>
+                    </li>
+                  </>
+                ) : (
+                  <>
+                    <li className="nav-item">
+                      <Link to="/login" className="nav-link">
+                        <i className="fas fa-sign-in-alt"></i>
+                        <span>Login</span>
+                      </Link>
+                    </li>
+                    <li className="nav-item">
+                      <Link to="/signup" className="nav-link btn-signup">
+                        <i className="fas fa-user-plus"></i>
+                        <span>Sign Up</span>
+                      </Link>
+                    </li>
+                    <li className="nav-item cart-wrapper">
+                      <Link to="/cart" className="nav-link">
+                        <i className="fas fa-shopping-cart"></i>
+                        <span>Cart</span>
+                        {cartCount > 0 && (
+                          <span className="cart-count">
+                            {cartCount > 99 ? '99+' : cartCount}
+                          </span>
+                        )}
+                      </Link>
+                    </li>
+                  </>
+                )}
+              </ul>
+            </div>
+
+            {/* Mobile Right Section - Only visible on mobile */}
+            <div className="mobile-right-section">
+              <Link to="/cart" className="mobile-cart-btn">
+                <i className="fas fa-shopping-cart"></i>
+                {cartCount > 0 && (
+                  <span className="mobile-cart-count">
+                    {cartCount > 99 ? '99+' : cartCount}
+                  </span>
+                )}
+              </Link>
+              <button 
+                className={`mobile-toggle ${mobileMenuOpen ? 'active' : ''}`}
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                aria-label="Menu"
+              >
+                <span className="hamburger"></span>
+              </button>
+            </div>
+
+            {/* Mobile Navigation Menu - Only visible on mobile */}
+            <div className={`mobile-nav-menu ${mobileMenuOpen ? 'active' : ''}`}>
+              <ul className="mobile-nav-links">
+                <li>
+                  <Link 
+                    to="/" 
+                    className={`mobile-nav-link ${isActive('/') ? 'active' : ''}`} 
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <i className="fas fa-home"></i>
+                    <span>Home</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to="/browse" 
+                    className={`mobile-nav-link ${isActive('/browse') ? 'active' : ''}`} 
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <i className="fas fa-laptop"></i>
+                    <span>Browse</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to="/support" 
+                    className={`mobile-nav-link ${isActive('/support') ? 'active' : ''}`} 
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <i className="fas fa-headset"></i>
+                    <span>Support</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to="/about" 
+                    className={`mobile-nav-link ${isActive('/about') ? 'active' : ''}`} 
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <i className="fas fa-info-circle"></i>
+                    <span>About</span>
+                  </Link>
+                </li>
+              </ul>
+
+              <ul className="mobile-user-links">
+                {user ? (
+                  <>
+                    {user.role === 'admin' && (
+                      <li>
+                        <Link 
+                          to="/admin" 
+                          className={`mobile-nav-link mobile-admin-link ${isActive('/admin') ? 'active' : ''}`} 
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <i className="fas fa-cog"></i>
+                          <span>Admin</span>
+                        </Link>
+                      </li>
+                    )}
+                    <li>
+                      <Link 
+                        to="/dashboard" 
+                        className={`mobile-nav-link ${isActive('/dashboard') ? 'active' : ''}`} 
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <i className="fas fa-user-circle"></i>
+                        <span>Dashboard</span>
+                      </Link>
+                    </li>
+                    <li>
                       <button 
-                        className="nav-link btn-logout"
+                        className="mobile-nav-link mobile-logout"
                         onClick={() => {
                           logoutUser();
                           setMobileMenuOpen(false);
@@ -786,39 +912,24 @@ const Header = ({ user, cartCount, logoutUser }) => {
                   </>
                 ) : (
                   <>
-                    <li className="nav-item">
+                    <li>
                       <Link 
                         to="/login" 
-                        className="nav-link"
+                        className="mobile-nav-link" 
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         <i className="fas fa-sign-in-alt"></i>
                         <span>Login</span>
                       </Link>
                     </li>
-                    <li className="nav-item">
+                    <li>
                       <Link 
                         to="/signup" 
-                        className="nav-link btn-signup"
+                        className="mobile-nav-link mobile-signup" 
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         <i className="fas fa-user-plus"></i>
                         <span>Sign Up</span>
-                      </Link>
-                    </li>
-                    <li className="nav-item cart-wrapper">
-                      <Link 
-                        to="/cart" 
-                        className="nav-link"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        <i className="fas fa-shopping-cart"></i>
-                        <span>Cart</span>
-                        {cartCount > 0 && (
-                          <span className="cart-count">
-                            {cartCount > 99 ? '99+' : cartCount}
-                          </span>
-                        )}
                       </Link>
                     </li>
                   </>

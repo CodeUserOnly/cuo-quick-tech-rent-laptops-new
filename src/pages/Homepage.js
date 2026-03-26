@@ -1,9 +1,14 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import DeviceCard from '../components/DeviceCard';
+import Toast from '../components/Toast';
 
 const Homepage = ({ devices, addToCart }) => {
   const featuredDevices = devices.slice(0, 3);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastDuration, setToastDuration] = useState(7);
+  const [toastPrice, setToastPrice] = useState(0);
 
   useEffect(() => {
     // Add Android-specific optimizations
@@ -134,6 +139,39 @@ const Homepage = ({ devices, addToCart }) => {
       observer.disconnect();
     };
   }, []);
+
+  // Enhanced add to cart handler with toast notification
+  const handleAddToCart = (device) => {
+    if (!device || !device.available) return;
+    
+    // Add haptic feedback for mobile devices
+    if (window.navigator && window.navigator.vibrate) {
+      window.navigator.vibrate(50);
+    }
+    
+    // Use default rental duration of 7 days for homepage
+    const rentalDuration = 7;
+    const totalPrice = device.price * rentalDuration;
+    
+    const deviceWithDuration = { 
+      ...device, 
+      rentalDuration,
+      totalPrice: totalPrice
+    };
+    
+    addToCart(deviceWithDuration);
+    
+    // Set toast message with device details
+    setToastMessage(`${device.name} added to cart! 🛒`);
+    setToastDuration(rentalDuration);
+    setToastPrice(totalPrice);
+    setShowToast(true);
+    
+    // Auto-hide toast after 3 seconds
+    setTimeout(() => {
+      setShowToast(false);
+    }, 3000);
+  };
 
   const styles = {
     heroSection: {
@@ -398,6 +436,15 @@ const Homepage = ({ devices, addToCart }) => {
 
   return (
     <div className="homepage-android-optimized smooth-scroll">
+      {/* Toast Component - Rendered at document.body level */}
+      <Toast 
+        show={showToast}
+        message={toastMessage}
+        duration={toastDuration}
+        price={toastPrice}
+        onClose={() => setShowToast(false)}
+      />
+
       {/* Hero Section */}
       <section style={styles.heroSection} className="hero-section">
         <div style={styles.heroOverlay}></div>
@@ -515,7 +562,7 @@ const Homepage = ({ devices, addToCart }) => {
               >
                 <DeviceCard 
                   device={device} 
-                  addToCart={addToCart}
+                  addToCart={handleAddToCart}
                 />
               </div>
             ))}

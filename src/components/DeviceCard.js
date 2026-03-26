@@ -27,6 +27,7 @@ const DeviceCard = ({ device, addToCart }) => {
     e.preventDefault();
     e.stopPropagation();
     if (available) {
+      // Call the parent's addToCart function (which includes toast)
       addToCart(device);
       // Visual feedback
       const button = e.currentTarget;
