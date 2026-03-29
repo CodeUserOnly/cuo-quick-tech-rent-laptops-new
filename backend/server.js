@@ -15,7 +15,6 @@ const allowedOrigins = [
   'https://quick-tech-rent-001.netlify.app',        // Your first Netlify site
   'https://quick-tech-rent-002.netlify.app',        // Your current Netlify site (FIXED)
   'https://quick-tech-rent-003.netlify.app',        // Future previews
-  'https://qtr-03.netlify.app',
   process.env.FRONTEND_URL                          // Optional: if you set this in Render env
 ].filter(Boolean); // Remove any undefined values
 
