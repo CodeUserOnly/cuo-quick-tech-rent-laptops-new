@@ -11,7 +11,9 @@ const UserDashboard = ({ user }) => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [paymentDetails, setPaymentDetails] = useState(null);
 
   useEffect(() => {
     const loadOrders = async () => {
@@ -42,6 +44,7 @@ const UserDashboard = ({ user }) => {
       case 'active': return ['pending', 'confirmed', 'shipped', 'delivered'].includes(order.status);
       case 'completed': return order.status === 'completed';
       case 'cancelled': return order.status === 'cancelled';
+      case 'pending_payment': return order.payment_status === 'pending';
       default: return true;
     }
   });
@@ -51,6 +54,9 @@ const UserDashboard = ({ user }) => {
     spent: orders.reduce((sum, order) => sum + parseFloat(order.total || 0), 0),
     active: orders.filter(o => ['pending', 'confirmed', 'shipped', 'delivered'].includes(o.status)).length,
     completed: orders.filter(o => o.status === 'completed' || o.status === 'delivered').length,
+    pendingPayment: orders.filter(o => o.payment_status === 'pending' && o.payment_method === 'cod').length,
+    totalPaid: orders.filter(o => o.payment_status === 'paid').reduce((sum, order) => sum + parseFloat(order.total || 0), 0),
+    totalPending: orders.filter(o => o.payment_status === 'pending').reduce((sum, order) => sum + parseFloat(order.total || 0), 0),
   };
 
   const cancelOrder = async (orderId) => {
@@ -89,6 +95,18 @@ const UserDashboard = ({ user }) => {
     }
   };
 
+  const viewPaymentDetails = (order) => {
+    setSelectedOrder(order);
+    setPaymentDetails({
+      method: order.payment_method,
+      status: order.payment_status,
+      date: order.payment_date,
+      transactionId: order.razorpay_payment_id,
+      amount: order.total
+    });
+    setShowPaymentModal(true);
+  };
+
   const getStatusStyle = (status) => {
     const styles = {
       completed: { bg: '#10B981', color: 'white', icon: '✓', label: 'Completed', lightBg: '#D1FAE5', textColor: '#065F46', step: 5, borderColor: '#10B981' },
@@ -99,6 +117,18 @@ const UserDashboard = ({ user }) => {
       cancelled: { bg: '#6B7280', color: 'white', icon: '✗', label: 'Cancelled', lightBg: '#F3F4F6', textColor: '#374151', step: 0, borderColor: '#6B7280' }
     };
     return styles[status] || styles.pending;
+  };
+
+  const getPaymentStyle = (method, status) => {
+    if (method === 'online') {
+      return status === 'paid' 
+        ? { bg: '#D1FAE5', color: '#065F46', icon: '✅', label: 'Paid Online' }
+        : { bg: '#FEE2E2', color: '#991B1B', icon: '⏳', label: 'Payment Failed' };
+    } else {
+      return status === 'paid'
+        ? { bg: '#D1FAE5', color: '#065F46', icon: '✅', label: 'COD - Paid' }
+        : { bg: '#FEF3C7', color: '#92400E', icon: '💵', label: 'COD - Pending' };
+    }
   };
 
   const getDaysLeft = (returnDate) => {
@@ -115,7 +145,7 @@ const UserDashboard = ({ user }) => {
     { key: 'completed', label: 'Completed', icon: '🎯', color: '#10B981' }
   ];
 
-  // Enhanced styles with EXTRA STRONG shadows and CLEAR borders - Fixed duplicate keys
+  // Enhanced styles
   const styles = {
     app: {
       minHeight: '100vh',
@@ -126,7 +156,6 @@ const UserDashboard = ({ user }) => {
       maxWidth: '1200px',
       margin: '0 auto',
     },
-    // Header - Strong shadow
     header: {
       background: 'white',
       borderRadius: '24px',
@@ -174,40 +203,36 @@ const UserDashboard = ({ user }) => {
       transition: 'all 0.3s',
       boxShadow: '0 8px 20px rgba(102, 126, 234, 0.5)',
     },
-    // Stats Grid
     statsGrid: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-      gap: '24px',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+      gap: '20px',
       marginBottom: '28px',
     },
     statCard: (color) => ({
       background: 'white',
-      borderRadius: '24px',
-      padding: '24px',
+      borderRadius: '20px',
+      padding: '20px',
       boxShadow: '0 20px 35px -10px rgba(0,0,0,0.2), 0 5px 12px -5px rgba(0,0,0,0.1)',
       border: `3px solid ${color}`,
       transition: 'all 0.3s',
       cursor: 'pointer',
-      position: 'relative',
-      overflow: 'hidden',
     }),
     statValue: {
-      fontSize: 'clamp(28px, 4vw, 38px)',
+      fontSize: 'clamp(24px, 3vw, 32px)',
       fontWeight: 'bold',
       color: '#1F2937',
       marginBottom: '8px',
     },
     statLabel: {
-      fontSize: '13px',
+      fontSize: '12px',
       color: '#6B7280',
       fontWeight: '600',
     },
     statIcon: {
-      fontSize: '36px',
-      opacity: 0.9,
+      fontSize: '32px',
+      opacity: 0.8,
     },
-    // Rental Statistics Box - Extra strong shadow
     rentalStatsBox: {
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       borderRadius: '28px',
@@ -224,8 +249,8 @@ const UserDashboard = ({ user }) => {
     },
     rentalStatsGrid: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-      gap: '24px',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+      gap: '20px',
     },
     rentalStatItem: {
       textAlign: 'center',
@@ -236,13 +261,13 @@ const UserDashboard = ({ user }) => {
       border: '1px solid rgba(255,255,255,0.3)',
     },
     rentalStatValue: {
-      fontSize: '32px',
+      fontSize: '28px',
       fontWeight: 'bold',
       color: 'white',
       marginBottom: '8px',
     },
     rentalStatLabel: {
-      fontSize: '12px',
+      fontSize: '11px',
       color: 'rgba(255,255,255,0.95)',
       fontWeight: '500',
     },
@@ -261,7 +286,6 @@ const UserDashboard = ({ user }) => {
       transition: 'width 0.3s',
       boxShadow: '0 0 8px rgba(255,255,255,0.8)',
     },
-    // Orders Section
     ordersSection: {
       background: 'white',
       borderRadius: '28px',
@@ -283,96 +307,101 @@ const UserDashboard = ({ user }) => {
     },
     tabs: {
       display: 'flex',
-      gap: '14px',
+      gap: '12px',
       flexWrap: 'wrap',
     },
     tab: (active, color) => ({
-      padding: '10px 24px',
-      borderRadius: '14px',
+      padding: '10px 20px',
+      borderRadius: '12px',
       border: active ? 'none' : '2px solid #e5e7eb',
-      fontSize: '14px',
+      fontSize: '13px',
       fontWeight: '700',
       cursor: 'pointer',
       transition: 'all 0.2s',
       background: active ? color : 'white',
       color: active ? 'white' : '#6B7280',
-      boxShadow: active ? `0 6px 16px ${color}80` : '0 2px 6px rgba(0,0,0,0.08)',
+      boxShadow: active ? `0 4px 12px ${color}80` : '0 2px 4px rgba(0,0,0,0.05)',
     }),
     ordersContent: {
       padding: '28px',
       background: '#f8fafc',
     },
-    // Order Card - EXTRA STRONG SHADOW & CLEAR BORDER
     orderCard: {
       background: '#FFFFFF',
       borderRadius: '24px',
-      padding: '28px',
-      marginBottom: '28px',
+      padding: '24px',
+      marginBottom: '24px',
       border: '3px solid #e2e8f0',
-      boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25), 0 8px 20px -6px rgba(0,0,0,0.15)',
+      boxShadow: '0 20px 40px -12px rgba(0,0,0,0.2), 0 4px 12px -6px rgba(0,0,0,0.1)',
       transition: 'all 0.3s',
-      position: 'relative',
     },
     cardHeader: {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'flex-start',
       flexWrap: 'wrap',
-      gap: '20px',
-      marginBottom: '24px',
+      gap: '16px',
+      marginBottom: '20px',
       paddingBottom: '20px',
-      borderBottom: '3px solid #eef2ff',
+      borderBottom: '2px solid #eef2ff',
     },
     orderInfo: {
       flex: 1,
     },
     orderId: {
-      fontSize: '13px',
+      fontSize: '12px',
       color: '#9CA3AF',
       fontFamily: 'monospace',
-      marginBottom: '10px',
-      letterSpacing: '0.5px',
+      marginBottom: '8px',
       fontWeight: '500',
     },
     statusBadge: (bg, textColor, borderColor) => ({
       display: 'inline-block',
-      padding: '8px 18px',
-      borderRadius: '24px',
-      fontSize: '13px',
+      padding: '6px 14px',
+      borderRadius: '20px',
+      fontSize: '12px',
       fontWeight: '700',
       background: bg,
       color: textColor,
-      boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
-      border: `2px solid ${borderColor}`,
+      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+      border: `1px solid ${borderColor}`,
+    }),
+    paymentBadge: (bg, color) => ({
+      display: 'inline-block',
+      padding: '6px 14px',
+      borderRadius: '20px',
+      fontSize: '12px',
+      fontWeight: '700',
+      background: bg,
+      color: color,
+      marginLeft: '10px',
     }),
     orderTotal: {
       textAlign: 'right',
     },
     totalAmount: {
-      fontSize: '28px',
+      fontSize: '24px',
       fontWeight: 'bold',
       color: '#1F2937',
     },
     totalLabel: {
-      fontSize: '12px',
+      fontSize: '11px',
       color: '#9CA3AF',
-      marginTop: '6px',
+      marginTop: '4px',
       fontWeight: '500',
     },
-    // Status Timeline
     statusTimeline: {
-      marginBottom: '24px',
-      padding: '20px',
+      marginBottom: '20px',
+      padding: '16px',
       background: '#F9FAFB',
-      borderRadius: '20px',
-      border: '2px solid #e5e7eb',
-      boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.05)',
+      borderRadius: '16px',
+      border: '1px solid #e5e7eb',
     },
     timelineTitle: {
-      fontSize: '13px',
+      fontSize: '12px',
       fontWeight: '700',
       color: '#6B7280',
-      marginBottom: '16px',
+      marginBottom: '12px',
       textTransform: 'uppercase',
       letterSpacing: '0.5px',
     },
@@ -381,170 +410,158 @@ const UserDashboard = ({ user }) => {
       justifyContent: 'space-between',
       alignItems: 'center',
       flexWrap: 'wrap',
-      gap: '10px',
+      gap: '8px',
     },
     timelineStep: (isActive, isCompleted, color) => ({
       flex: 1,
-      minWidth: '85px',
+      minWidth: '70px',
       textAlign: 'center',
-      padding: '12px 8px',
-      borderRadius: '16px',
+      padding: '8px 4px',
+      borderRadius: '12px',
       background: isCompleted ? color : isActive ? `${color}15` : '#F3F4F6',
-      border: `3px solid ${isCompleted ? color : isActive ? color : '#E5E7EB'}`,
+      border: `2px solid ${isCompleted ? color : isActive ? color : '#E5E7EB'}`,
       transition: 'all 0.2s',
-      boxShadow: isCompleted ? `0 4px 12px ${color}60` : 'none',
     }),
     stepIcon: {
-      fontSize: '24px',
-      marginBottom: '6px',
+      fontSize: '20px',
+      marginBottom: '4px',
     },
     stepLabel: {
-      fontSize: '11px',
+      fontSize: '10px',
       fontWeight: '600',
       color: '#374151',
     },
-    // Devices List
     devicesList: {
-      marginBottom: '24px',
+      marginBottom: '20px',
     },
     deviceItem: {
       display: 'flex',
       alignItems: 'center',
-      gap: '14px',
-      padding: '14px',
+      gap: '12px',
+      padding: '12px',
       background: '#F9FAFB',
-      borderRadius: '16px',
-      marginBottom: '12px',
-      border: '2px solid #e5e7eb',
-      transition: 'all 0.2s',
-      boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+      borderRadius: '14px',
+      marginBottom: '10px',
+      border: '1px solid #e5e7eb',
     },
     deviceIcon: {
-      width: '48px',
-      height: '48px',
+      width: '44px',
+      height: '44px',
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      borderRadius: '14px',
+      borderRadius: '12px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      fontSize: '24px',
+      fontSize: '22px',
       flexShrink: 0,
-      boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
-      border: '1px solid rgba(255,255,255,0.3)',
+      boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
     },
     deviceDetails: {
       flex: 1,
     },
     deviceName: {
-      fontSize: '16px',
+      fontSize: '15px',
       fontWeight: '700',
       color: '#1F2937',
-      marginBottom: '6px',
+      marginBottom: '4px',
     },
     deviceSpecs: {
-      fontSize: '13px',
+      fontSize: '12px',
       color: '#6B7280',
       fontWeight: '500',
     },
-    // Return Info
     returnInfo: (urgent) => ({
-      padding: '16px 20px',
+      padding: '12px 16px',
       background: urgent ? '#FEF3C7' : '#F9FAFB',
-      borderRadius: '16px',
-      marginBottom: '24px',
-      border: `3px solid ${urgent ? '#F59E0B' : '#E5E7EB'}`,
-      boxShadow: urgent ? '0 4px 12px rgba(245, 158, 11, 0.3)' : '0 1px 2px rgba(0,0,0,0.05)',
+      borderRadius: '14px',
+      marginBottom: '20px',
+      border: `2px solid ${urgent ? '#F59E0B' : '#E5E7EB'}`,
     }),
     returnText: {
-      fontSize: '14px',
+      fontSize: '13px',
       color: '#374151',
       display: 'flex',
       alignItems: 'center',
-      gap: '10px',
+      gap: '8px',
       flexWrap: 'wrap',
       fontWeight: '500',
     },
-    // Action Buttons
     actionButtons: {
       display: 'flex',
-      gap: '14px',
+      gap: '12px',
       flexWrap: 'wrap',
       marginTop: '8px',
     },
     actionBtn: (bg, color, borderColor) => ({
-      flex: 1,
-      minWidth: '120px',
-      padding: '12px 20px',
+      padding: '10px 18px',
       border: `2px solid ${borderColor}`,
-      borderRadius: '14px',
+      borderRadius: '12px',
       background: bg,
       color: color,
-      fontWeight: '700',
-      fontSize: '14px',
+      fontWeight: '600',
+      fontSize: '13px',
+      cursor: 'pointer',
+      transition: 'all 0.2s',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '6px',
+      flex: 1,
+      minWidth: '100px',
+    }),
+    emptyState: {
+      textAlign: 'center',
+      padding: '60px 20px',
+    },
+    emptyIcon: {
+      fontSize: '64px',
+      marginBottom: '16px',
+    },
+    emptyTitle: {
+      fontSize: '20px',
+      fontWeight: 'bold',
+      color: '#1F2937',
+      marginBottom: '10px',
+    },
+    emptyText: {
+      fontSize: '13px',
+      color: '#6B7280',
+      marginBottom: '24px',
+    },
+    quickActions: {
+      background: 'white',
+      borderRadius: '24px',
+      padding: '24px',
+      boxShadow: '0 20px 40px -12px rgba(0,0,0,0.2), 0 4px 12px -6px rgba(0,0,0,0.1)',
+      border: '2px solid #eef2ff',
+    },
+    actionsTitle: {
+      fontSize: '18px',
+      fontWeight: 'bold',
+      color: '#1F2937',
+      marginBottom: '16px',
+    },
+    actionsGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+      gap: '12px',
+    },
+    quickActionBtn: (gradient, color) => ({
+      padding: '14px',
+      border: '1px solid rgba(255,255,255,0.3)',
+      borderRadius: '14px',
+      background: gradient,
+      color: color,
+      fontWeight: '600',
+      fontSize: '13px',
       cursor: 'pointer',
       transition: 'all 0.2s',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       gap: '8px',
-      boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
     }),
-    // Empty State
-    emptyState: {
-      textAlign: 'center',
-      padding: '80px 20px',
-    },
-    emptyIcon: {
-      fontSize: '80px',
-      marginBottom: '20px',
-    },
-    emptyTitle: {
-      fontSize: '22px',
-      fontWeight: 'bold',
-      color: '#1F2937',
-      marginBottom: '12px',
-    },
-    emptyText: {
-      fontSize: '14px',
-      color: '#6B7280',
-      marginBottom: '28px',
-    },
-    // Quick Actions
-    quickActions: {
-      background: 'white',
-      borderRadius: '28px',
-      padding: '28px',
-      boxShadow: '0 20px 40px -12px rgba(0,0,0,0.25), 0 8px 24px -8px rgba(0,0,0,0.15)',
-      border: '2px solid #eef2ff',
-    },
-    actionsTitle: {
-      fontSize: '20px',
-      fontWeight: 'bold',
-      color: '#1F2937',
-      marginBottom: '20px',
-    },
-    actionsGrid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-      gap: '14px',
-    },
-    quickActionBtn: (gradient, color) => ({
-      padding: '16px',
-      border: '1px solid rgba(255,255,255,0.3)',
-      borderRadius: '16px',
-      background: gradient,
-      color: color,
-      fontWeight: '700',
-      fontSize: '14px',
-      cursor: 'pointer',
-      transition: 'all 0.2s',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: '10px',
-      boxShadow: '0 6px 14px rgba(0,0,0,0.2)',
-    }),
-    // Modal
     modalOverlay: {
       position: 'fixed',
       top: 0,
@@ -561,28 +578,51 @@ const UserDashboard = ({ user }) => {
     },
     modal: {
       background: 'white',
-      borderRadius: '28px',
-      padding: '32px',
-      maxWidth: '420px',
+      borderRadius: '24px',
+      padding: '28px',
+      maxWidth: '480px',
       width: '100%',
       boxShadow: '0 30px 60px rgba(0,0,0,0.4)',
       border: '2px solid #eef2ff',
     },
     modalTitle: {
-      fontSize: '24px',
+      fontSize: '22px',
       fontWeight: 'bold',
       color: '#1F2937',
       marginBottom: '16px',
     },
     modalText: {
-      fontSize: '15px',
+      fontSize: '14px',
       color: '#6B7280',
-      marginBottom: '28px',
-      lineHeight: '1.6',
+      marginBottom: '24px',
+      lineHeight: '1.5',
     },
     modalButtons: {
       display: 'flex',
-      gap: '14px',
+      gap: '12px',
+    },
+    paymentDetails: {
+      background: '#F9FAFB',
+      padding: '16px',
+      borderRadius: '16px',
+      marginBottom: '24px',
+      border: '1px solid #e5e7eb',
+    },
+    paymentRow: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      padding: '8px 0',
+      borderBottom: '1px solid #e5e7eb',
+    },
+    paymentLabel: {
+      fontWeight: '600',
+      color: '#374151',
+      fontSize: '13px',
+    },
+    paymentValue: {
+      color: '#1F2937',
+      fontWeight: '500',
+      fontSize: '13px',
     },
   };
 
@@ -591,7 +631,7 @@ const UserDashboard = ({ user }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      whileHover={{ scale: 1.02, y: -6 }}
+      whileHover={{ scale: 1.02, y: -4 }}
       style={styles.statCard(color)}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -606,6 +646,7 @@ const UserDashboard = ({ user }) => {
 
   const OrderCard = ({ order }) => {
     const status = getStatusStyle(order.status);
+    const payment = getPaymentStyle(order.payment_method, order.payment_status);
     const daysLeft = getDaysLeft(order.return_date);
     const isUrgent = daysLeft !== null && daysLeft <= 3 && daysLeft > 0 && order.status === 'delivered';
     const currentStep = status.step || 0;
@@ -614,15 +655,20 @@ const UserDashboard = ({ user }) => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        whileHover={{ scale: 1.01, boxShadow: '0 30px 60px -12px rgba(0,0,0,0.35), 0 10px 25px -8px rgba(0,0,0,0.2)' }}
+        whileHover={{ scale: 1.01 }}
         style={styles.orderCard}
       >
         <div style={styles.cardHeader}>
           <div style={styles.orderInfo}>
             <div style={styles.orderId}>#{order.id.slice(-8).toUpperCase()}</div>
-            <span style={styles.statusBadge(status.lightBg, status.textColor, status.borderColor)}>
-              {status.icon} {status.label}
-            </span>
+            <div>
+              <span style={styles.statusBadge(status.lightBg, status.textColor, status.borderColor)}>
+                {status.icon} {status.label}
+              </span>
+              <span style={styles.paymentBadge(payment.bg, payment.color)}>
+                {payment.icon} {payment.label}
+              </span>
+            </div>
           </div>
           <div style={styles.orderTotal}>
             <div style={styles.totalAmount}>₹{parseFloat(order.total || 0).toFixed(2)}</div>
@@ -658,7 +704,7 @@ const UserDashboard = ({ user }) => {
                 <div style={styles.deviceDetails}>
                   <div style={styles.deviceName}>{item.devices?.name || 'Premium Laptop'}</div>
                   <div style={styles.deviceSpecs}>
-                    {item.rental_duration} days • ₹{item.price}
+                    {item.rental_duration} days × ₹{item.price}/day = ₹{item.total_price || (item.price * item.rental_duration)}
                   </div>
                 </div>
               </div>
@@ -673,7 +719,7 @@ const UserDashboard = ({ user }) => {
               <span>Return by: {new Date(order.return_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
             </div>
             {daysLeft !== null && daysLeft > 0 && order.status === 'delivered' && (
-              <div style={{ ...styles.returnText, marginTop: '8px', fontSize: '13px' }}>
+              <div style={{ ...styles.returnText, marginTop: '6px', fontSize: '12px' }}>
                 <span>⏰</span>
                 <span style={{ fontWeight: isUrgent ? 'bold' : 'normal', color: isUrgent ? '#F59E0B' : '#6B7280' }}>
                   {daysLeft} days remaining
@@ -684,6 +730,14 @@ const UserDashboard = ({ user }) => {
         )}
 
         <div style={styles.actionButtons}>
+          <motion.button
+            whileHover={{ scale: 0.98 }}
+            onClick={() => viewPaymentDetails(order)}
+            style={styles.actionBtn('#DBEAFE', '#3B82F6', '#BFDBFE')}
+          >
+            💳 Payment Details
+          </motion.button>
+          
           {['pending', 'confirmed'].includes(order.status) && (
             <motion.button
               whileHover={{ scale: 0.98 }}
@@ -693,6 +747,7 @@ const UserDashboard = ({ user }) => {
               ❌ Cancel Order
             </motion.button>
           )}
+          
           {['cancelled', 'completed'].includes(order.status) && (
             <motion.button
               whileHover={{ scale: 0.98 }}
@@ -702,6 +757,7 @@ const UserDashboard = ({ user }) => {
               🗑️ Delete
             </motion.button>
           )}
+          
           {order.status === 'delivered' && (
             <motion.button
               whileHover={{ scale: 0.98 }}
@@ -770,6 +826,8 @@ const UserDashboard = ({ user }) => {
           <StatCard title="Total Spent" value={`₹${stats.spent.toFixed(0)}`} icon="💰" color="#10b981" />
           <StatCard title="Active Rentals" value={stats.active} icon="⚡" color="#f59e0b" />
           <StatCard title="Completed" value={stats.completed} icon="🎯" color="#8b5cf6" />
+          <StatCard title="Paid Amount" value={`₹${stats.totalPaid.toFixed(0)}`} icon="✅" color="#10b981" />
+          <StatCard title="Pending Payment" value={`₹${stats.totalPending.toFixed(0)}`} icon="⏳" color="#f59e0b" />
         </div>
 
         {/* Rental Statistics Box */}
@@ -792,6 +850,10 @@ const UserDashboard = ({ user }) => {
             <div style={styles.rentalStatItem}>
               <div style={styles.rentalStatValue}>{stats.active}</div>
               <div style={styles.rentalStatLabel}>Active</div>
+            </div>
+            <div style={styles.rentalStatItem}>
+              <div style={styles.rentalStatValue}>{stats.pendingPayment}</div>
+              <div style={styles.rentalStatLabel}>Pending Payments</div>
             </div>
             <div style={styles.rentalStatItem}>
               <div style={styles.rentalStatValue}>{Math.round(completionRate)}%</div>
@@ -817,7 +879,8 @@ const UserDashboard = ({ user }) => {
                 { id: 'all', label: 'All', count: orders.length, color: '#667eea' },
                 { id: 'active', label: 'Active', count: stats.active, color: '#f59e0b' },
                 { id: 'completed', label: 'Completed', count: stats.completed, color: '#10b981' },
-                { id: 'cancelled', label: 'Cancelled', count: orders.filter(o => o.status === 'cancelled').length, color: '#ef4444' }
+                { id: 'cancelled', label: 'Cancelled', count: orders.filter(o => o.status === 'cancelled').length, color: '#ef4444' },
+                { id: 'pending_payment', label: 'Pending Payment', count: stats.pendingPayment, color: '#f59e0b' }
               ].map(tab => (
                 <button
                   key={tab.id}
@@ -883,7 +946,7 @@ const UserDashboard = ({ user }) => {
                 🎧 Support
               </motion.button>
             </Link>
-            <Link to="/about" style={{ textDecoration: 'none' }}>
+            <Link to="/profile" style={{ textDecoration: 'none' }}>
               <motion.button whileHover={{ scale: 1.02 }} style={styles.quickActionBtn('linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)', 'white')}>
                 👤 Profile
               </motion.button>
@@ -891,6 +954,73 @@ const UserDashboard = ({ user }) => {
           </div>
         </motion.div>
       </div>
+
+      {/* Payment Details Modal */}
+      <AnimatePresence>
+        {showPaymentModal && paymentDetails && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={styles.modalOverlay}
+            onClick={() => setShowPaymentModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              style={styles.modal}
+              onClick={e => e.stopPropagation()}
+            >
+              <h3 style={styles.modalTitle}>💳 Payment Details</h3>
+              <div style={styles.paymentDetails}>
+                <div style={styles.paymentRow}>
+                  <span style={styles.paymentLabel}>Order ID:</span>
+                  <span style={styles.paymentValue}>#{selectedOrder?.id.slice(-8).toUpperCase()}</span>
+                </div>
+                <div style={styles.paymentRow}>
+                  <span style={styles.paymentLabel}>Amount:</span>
+                  <span style={styles.paymentValue}>₹{parseFloat(paymentDetails.amount || 0).toFixed(2)}</span>
+                </div>
+                <div style={styles.paymentRow}>
+                  <span style={styles.paymentLabel}>Payment Method:</span>
+                  <span style={styles.paymentValue}>
+                    {paymentDetails.method === 'online' ? '💳 Online Payment' : '💵 Cash on Delivery'}
+                  </span>
+                </div>
+                <div style={styles.paymentRow}>
+                  <span style={styles.paymentLabel}>Payment Status:</span>
+                  <span style={styles.paymentValue}>
+                    {paymentDetails.status === 'paid' ? '✅ Paid' : '⏳ Pending'}
+                  </span>
+                </div>
+                {paymentDetails.date && (
+                  <div style={styles.paymentRow}>
+                    <span style={styles.paymentLabel}>Payment Date:</span>
+                    <span style={styles.paymentValue}>
+                      {new Date(paymentDetails.date).toLocaleString()}
+                    </span>
+                  </div>
+                )}
+                {paymentDetails.transactionId && (
+                  <div style={styles.paymentRow}>
+                    <span style={styles.paymentLabel}>Transaction ID:</span>
+                    <span style={styles.paymentValue}>{paymentDetails.transactionId}</span>
+                  </div>
+                )}
+              </div>
+              <div style={styles.modalButtons}>
+                <button
+                  onClick={() => setShowPaymentModal(false)}
+                  style={{ ...styles.actionBtn('#667eea', 'white', '#667eea'), flex: 1 }}
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Cancel Modal */}
       <AnimatePresence>
