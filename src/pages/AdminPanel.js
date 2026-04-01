@@ -44,14 +44,17 @@ const AdminPanel = ({ devices, addDevice, updateDevice, deleteDevice, user }) =>
         .select('*')
         .order('created_at', { ascending: false });
       
-      if (!ordersError) setOrders(ordersData || []);
+      if (!ordersError) {
+        console.log('Orders data:', ordersData); // Debug log
+        setOrders(ordersData || []);
+      }
 
       const { data: orderItemsData, error: itemsError } = await supabase
         .from('order_items')
         .select(`
           *,
           devices (name, brand, image),
-          orders (status, total, user_id)
+          orders (status, total, user_id, payment_method, payment_status)
         `);
       
       if (!itemsError) setOrderItems(orderItemsData || []);
@@ -176,9 +179,34 @@ const AdminPanel = ({ devices, addDevice, updateDevice, deleteDevice, user }) =>
         setOrders(prev => prev.map(order => 
           order.id === orderId ? { ...order, status: newStatus } : order
         ));
+        alert(`✅ Order status updated to: ${newStatus}`);
       }
     } catch (error) {
       console.error('Error updating order status:', error);
+      alert('Failed to update order status');
+    }
+  };
+
+  const updatePaymentStatus = async (orderId, paymentStatus) => {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ 
+          payment_status: paymentStatus, 
+          payment_date: paymentStatus === 'paid' ? new Date().toISOString() : null,
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', orderId);
+
+      if (!error) {
+        setOrders(prev => prev.map(order => 
+          order.id === orderId ? { ...order, payment_status: paymentStatus } : order
+        ));
+        alert(`✅ Payment status updated to: ${paymentStatus === 'paid' ? 'Paid' : 'Pending'}`);
+      }
+    } catch (error) {
+      console.error('Error updating payment status:', error);
+      alert('❌ Failed to update payment status');
     }
   };
 
@@ -229,6 +257,11 @@ const AdminPanel = ({ devices, addDevice, updateDevice, deleteDevice, user }) =>
   const totalUsers = users.length;
   const totalOrders = orders.length;
   const totalRevenue = orders.reduce((sum, order) => sum + parseFloat(order.total || 0), 0);
+  const totalPaid = orders.filter(order => order.payment_status === 'paid').reduce((sum, order) => sum + parseFloat(order.total || 0), 0);
+  const totalPending = orders.filter(order => order.payment_status === 'pending').reduce((sum, order) => sum + parseFloat(order.total || 0), 0);
+  const onlinePayments = orders.filter(order => order.payment_method === 'online').reduce((sum, order) => sum + parseFloat(order.total || 0), 0);
+  const codPayments = orders.filter(order => order.payment_method === 'cod').reduce((sum, order) => sum + parseFloat(order.total || 0), 0);
+  
   const getUserName = (userId) => {
     const user = users.find(u => u.id === userId);
     return user ? user.name : 'Unknown User';
@@ -494,6 +527,8 @@ const AdminPanel = ({ devices, addDevice, updateDevice, deleteDevice, user }) =>
           <StatCard title="Total Users" value={totalUsers} icon="👥" color="#10b981" />
           <StatCard title="Total Orders" value={totalOrders} icon="📦" color="#f59e0b" />
           <StatCard title="Total Revenue" value={`₹${totalRevenue.toFixed(0)}`} icon="💰" color="#8b5cf6" />
+          <StatCard title="Online Payments" value={`₹${onlinePayments.toFixed(0)}`} icon="💳" color="#3b82f6" />
+          <StatCard title="COD Payments" value={`₹${codPayments.toFixed(0)}`} icon="💵" color="#f59e0b" />
         </div>
 
         {/* Tabs */}
@@ -504,6 +539,7 @@ const AdminPanel = ({ devices, addDevice, updateDevice, deleteDevice, user }) =>
               { id: 'users', label: '👥 Users', color: '#10b981' },
               { id: 'orders', label: '📦 Orders', color: '#f59e0b' },
               { id: 'orderItems', label: '🛒 Order Items', color: '#3b82f6' },
+              { id: 'payments', label: '💳 Payments', color: '#ec489a' },
               { id: 'analytics', label: '📊 Analytics', color: '#8b5cf6' }
             ].map(tab => (
               <motion.button
@@ -884,7 +920,9 @@ const AdminPanel = ({ devices, addDevice, updateDevice, deleteDevice, user }) =>
                       <th style={styles.th}>Order ID</th>
                       <th style={styles.th}>Customer</th>
                       <th style={styles.th}>Total</th>
-                      <th style={styles.th}>Status</th>
+                      <th style={styles.th}>Payment Method</th>
+                      <th style={styles.th}>Payment Status</th>
+                      <th style={styles.th}>Order Status</th>
                       <th style={styles.th}>Delivery Date</th>
                       <th style={styles.th}>Return Date</th>
                       <th style={styles.th}>Actions</th>
@@ -901,6 +939,11 @@ const AdminPanel = ({ devices, addDevice, updateDevice, deleteDevice, user }) =>
                         cancelled: { bg: '#F3F4F6', color: '#374151' }
                       };
                       const statusColor = statusColors[order.status] || statusColors.pending;
+                      const paymentStatusColor = order.payment_status === 'paid' ? '#D1FAE5' : '#FEE2E2';
+                      const paymentStatusTextColor = order.payment_status === 'paid' ? '#065F46' : '#991B1B';
+                      const paymentMethodColor = order.payment_method === 'online' ? '#DBEAFE' : '#FEF3C7';
+                      const paymentMethodTextColor = order.payment_method === 'online' ? '#1E40AF' : '#92400E';
+                      
                       return (
                         <motion.tr 
                           key={order.id} 
@@ -912,9 +955,19 @@ const AdminPanel = ({ devices, addDevice, updateDevice, deleteDevice, user }) =>
                             <span style={{ fontFamily: 'monospace', fontSize: '12px', color: '#6B7280' }}>
                               {order.id.slice(0, 8)}...
                             </span>
-                          </td>
+                           </td>
                           <td style={styles.td}>{getUserName(order.user_id)}</td>
                           <td style={styles.td}>₹{order.total}</td>
+                          <td style={styles.td}>
+                            <span style={styles.badge(paymentMethodColor, paymentMethodTextColor)}>
+                              {order.payment_method === 'online' ? '💳 Online Payment' : '💵 Cash on Delivery'}
+                            </span>
+                          </td>
+                          <td style={styles.td}>
+                            <span style={styles.badge(paymentStatusColor, paymentStatusTextColor)}>
+                              {order.payment_status === 'paid' ? '✅ Paid' : '⏳ Pending'}
+                            </span>
+                          </td>
                           <td style={styles.td}>
                             <span style={styles.badge(statusColor.bg, statusColor.color)}>{order.status}</span>
                           </td>
@@ -934,6 +987,16 @@ const AdminPanel = ({ devices, addDevice, updateDevice, deleteDevice, user }) =>
                                 <option value="completed">Completed</option>
                                 <option value="cancelled">Cancelled</option>
                               </select>
+                              {order.payment_method === 'cod' && order.payment_status === 'pending' && (
+                                <motion.button 
+                                  whileHover={{ scale: 0.95 }} 
+                                  whileTap={{ scale: 0.95 }}
+                                  onClick={() => updatePaymentStatus(order.id, 'paid')} 
+                                  style={styles.button('#D1FAE5', '#065F46', '#A7F3D0')}
+                                >
+                                  ✅ Mark Paid
+                                </motion.button>
+                              )}
                               <motion.button 
                                 whileHover={{ scale: 0.95 }} 
                                 whileTap={{ scale: 0.95 }}
@@ -971,6 +1034,8 @@ const AdminPanel = ({ devices, addDevice, updateDevice, deleteDevice, user }) =>
                       <th style={styles.th}>Device</th>
                       <th style={styles.th}>Duration</th>
                       <th style={styles.th}>Price</th>
+                      <th style={styles.th}>Payment Method</th>
+                      <th style={styles.th}>Payment Status</th>
                       <th style={styles.th}>Order Status</th>
                       <th style={styles.th}>Order Date</th>
                       <th style={styles.th}>Actions</th>
@@ -987,6 +1052,11 @@ const AdminPanel = ({ devices, addDevice, updateDevice, deleteDevice, user }) =>
                         cancelled: { bg: '#F3F4F6', color: '#374151' }
                       };
                       const statusColor = statusColors[item.orders?.status] || statusColors.pending;
+                      const paymentStatusColor = item.orders?.payment_status === 'paid' ? '#D1FAE5' : '#FEE2E2';
+                      const paymentStatusTextColor = item.orders?.payment_status === 'paid' ? '#065F46' : '#991B1B';
+                      const paymentMethodColor = item.orders?.payment_method === 'online' ? '#DBEAFE' : '#FEF3C7';
+                      const paymentMethodTextColor = item.orders?.payment_method === 'online' ? '#1E40AF' : '#92400E';
+                      
                       return (
                         <motion.tr 
                           key={item.id} 
@@ -1002,6 +1072,16 @@ const AdminPanel = ({ devices, addDevice, updateDevice, deleteDevice, user }) =>
                           <td style={styles.td}>{item.devices?.name || 'Unknown Device'}</td>
                           <td style={styles.td}>{item.rental_duration} days</td>
                           <td style={styles.td}>₹{item.price}</td>
+                          <td style={styles.td}>
+                            <span style={styles.badge(paymentMethodColor, paymentMethodTextColor)}>
+                              {item.orders?.payment_method === 'online' ? '💳 Online' : '💵 COD'}
+                            </span>
+                          </td>
+                          <td style={styles.td}>
+                            <span style={styles.badge(paymentStatusColor, paymentStatusTextColor)}>
+                              {item.orders?.payment_status === 'paid' ? '✅ Paid' : '⏳ Pending'}
+                            </span>
+                          </td>
                           <td style={styles.td}>
                             <span style={styles.badge(statusColor.bg, statusColor.color)}>{item.orders?.status || 'Unknown'}</span>
                           </td>
@@ -1019,6 +1099,229 @@ const AdminPanel = ({ devices, addDevice, updateDevice, deleteDevice, user }) =>
                         </motion.tr>
                       );
                     })}
+                  </tbody>
+                </table>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Payments Tab */}
+          {activeTab === 'payments' && !loading && (
+            <motion.div
+              key="payments"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: '#1F2937', marginBottom: '20px' }}>💳 Payment Management</h2>
+              
+              {/* Payment Summary Cards */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '24px' }}>
+                <div style={{ ...styles.tableCard, background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: 'white' }}>
+                  <div style={{ fontSize: '24px', marginBottom: '8px' }}>💳 Online Payments</div>
+                  <div style={{ fontSize: '32px', fontWeight: 'bold' }}>
+                    ₹{orders.filter(o => o.payment_method === 'online').reduce((sum, o) => sum + parseFloat(o.total || 0), 0).toFixed(0)}
+                  </div>
+                  <div style={{ fontSize: '14px', opacity: 0.9 }}>
+                    {orders.filter(o => o.payment_method === 'online').length} transactions
+                  </div>
+                </div>
+                
+                <div style={{ ...styles.tableCard, background: 'linear-gradient(135deg, #f59e0b 0%, #f97316 100%)', color: 'white' }}>
+                  <div style={{ fontSize: '24px', marginBottom: '8px' }}>💵 Cash on Delivery</div>
+                  <div style={{ fontSize: '32px', fontWeight: 'bold' }}>
+                    ₹{orders.filter(o => o.payment_method === 'cod').reduce((sum, o) => sum + parseFloat(o.total || 0), 0).toFixed(0)}
+                  </div>
+                  <div style={{ fontSize: '14px', opacity: 0.9 }}>
+                    {orders.filter(o => o.payment_method === 'cod').length} orders
+                  </div>
+                </div>
+                
+                <div style={{ ...styles.tableCard, background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white' }}>
+                  <div style={{ fontSize: '24px', marginBottom: '8px' }}>✅ Paid Amount</div>
+                  <div style={{ fontSize: '32px', fontWeight: 'bold' }}>₹{totalPaid.toFixed(0)}</div>
+                  <div style={{ fontSize: '14px', opacity: 0.9 }}>
+                    {orders.filter(o => o.payment_status === 'paid').length} paid orders
+                  </div>
+                </div>
+                
+                <div style={{ ...styles.tableCard, background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', color: 'white' }}>
+                  <div style={{ fontSize: '24px', marginBottom: '8px' }}>⏳ Pending Amount</div>
+                  <div style={{ fontSize: '32px', fontWeight: 'bold' }}>₹{totalPending.toFixed(0)}</div>
+                  <div style={{ fontSize: '14px', opacity: 0.9 }}>
+                    {orders.filter(o => o.payment_status === 'pending').length} pending payments
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Details Table */}
+              <div style={styles.tableCard}>
+                <h3 style={{ ...styles.sectionTitle, marginBottom: '20px' }}>📋 Payment Details</h3>
+                <table style={styles.table}>
+                  <thead>
+                    <tr>
+                      <th style={styles.th}>Order ID</th>
+                      <th style={styles.th}>Customer</th>
+                      <th style={styles.th}>Amount</th>
+                      <th style={styles.th}>Payment Method</th>
+                      <th style={styles.th}>Payment Status</th>
+                      <th style={styles.th}>Delivery Status</th>
+                      <th style={styles.th}>Order Status</th>
+                      <th style={styles.th}>Payment Date</th>
+                      <th style={styles.th}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {orders.map(order => {
+                      const isPaid = order.payment_status === 'paid';
+                      const isCOD = order.payment_method === 'cod';
+                      const showPaymentBlock = isCOD && !isPaid;
+                      
+                      return (
+                        <motion.tr 
+                          key={order.id} 
+                          initial={{ opacity: 0 }} 
+                          animate={{ opacity: 1 }}
+                          whileHover={{ backgroundColor: '#F9FAFB' }}
+                        >
+                          <td style={styles.td}>
+                            <span style={{ fontFamily: 'monospace', fontSize: '12px', color: '#6B7280' }}>
+                              {order.id.slice(0, 8)}...
+                            </span>
+                          </td>
+                          <td style={styles.td}>{getUserName(order.user_id)}</td>
+                          <td style={styles.td}>₹{order.total}</td>
+                          <td style={styles.td}>
+                            <span style={styles.badge(
+                              order.payment_method === 'online' ? '#DBEAFE' : '#FEF3C7',
+                              order.payment_method === 'online' ? '#1E40AF' : '#92400E'
+                            )}>
+                              {order.payment_method === 'online' ? '💳 Online Payment' : '💵 Cash on Delivery'}
+                            </span>
+                          </td>
+                          <td style={styles.td}>
+                            <span style={styles.badge(
+                              isPaid ? '#D1FAE5' : '#FEE2E2',
+                              isPaid ? '#065F46' : '#991B1B'
+                            )}>
+                              {isPaid ? '✅ Paid' : '⏳ Not Paid'}
+                            </span>
+                          </td>
+                          <td style={styles.td}>
+                            <span style={styles.badge(
+                              showPaymentBlock ? '#FEE2E2' : '#D1FAE5',
+                              showPaymentBlock ? '#991B1B' : '#065F46'
+                            )}>
+                              {showPaymentBlock ? '🚫 Delivery Blocked' : '✅ Delivery Allowed'}
+                            </span>
+                            {showPaymentBlock && (
+                              <div style={{ fontSize: '11px', color: '#991B1B', marginTop: '4px' }}>
+                                Payment pending for delivery
+                              </div>
+                            )}
+                          </td>
+                          <td style={styles.td}>
+                            <span style={styles.badge(
+                              order.status === 'completed' ? '#D1FAE5' : 
+                              order.status === 'cancelled' ? '#FEE2E2' : '#FEF3C7',
+                              order.status === 'completed' ? '#065F46' : 
+                              order.status === 'cancelled' ? '#991B1B' : '#92400E'
+                            )}>
+                              {order.status}
+                            </span>
+                          </td>
+                          <td style={styles.td}>
+                            {order.payment_date ? new Date(order.payment_date).toLocaleString() : 'Not paid yet'}
+                          </td>
+                          <td style={styles.td}>
+                            <div style={styles.actionGroup}>
+                              {showPaymentBlock && (
+                                <motion.button 
+                                  whileHover={{ scale: 0.95 }} 
+                                  whileTap={{ scale: 0.95 }}
+                                  onClick={() => updatePaymentStatus(order.id, 'paid')} 
+                                  style={styles.button('#D1FAE5', '#065F46', '#A7F3D0')}
+                                >
+                                  ✅ Mark as Paid
+                                </motion.button>
+                              )}
+                              <motion.button 
+                                whileHover={{ scale: 0.95 }} 
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => deleteOrder(order.id)} 
+                                style={styles.button('#FEE2E2', '#991B1B', '#FECACA')}
+                              >
+                                🗑️ Delete
+                              </motion.button>
+                            </div>
+                          </td>
+                        </motion.tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* COD Orders with Payment Pending */}
+              <div style={{ ...styles.tableCard, marginTop: '20px' }}>
+                <h3 style={{ ...styles.sectionTitle, marginBottom: '20px' }}>⚠️ COD Orders Pending Payment</h3>
+                <div style={{ background: '#FEF3C7', padding: '16px', borderRadius: '12px', marginBottom: '20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ fontSize: '24px' }}>⚠️</span>
+                    <div>
+                      <strong style={{ color: '#92400E' }}>Important:</strong>
+                      <span style={{ color: '#92400E', marginLeft: '8px' }}>
+                        These orders require payment confirmation before delivery. Use "Mark as Paid" button to confirm payment.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <table style={styles.table}>
+                  <thead>
+                    <tr>
+                      <th style={styles.th}>Order ID</th>
+                      <th style={styles.th}>Customer</th>
+                      <th style={styles.th}>Amount</th>
+                      <th style={styles.th}>Delivery Date</th>
+                      <th style={styles.th}>Status</th>
+                      <th style={styles.th}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {orders.filter(o => o.payment_method === 'cod' && o.payment_status !== 'paid').map(order => (
+                      <motion.tr 
+                        key={order.id} 
+                        initial={{ opacity: 0 }} 
+                        animate={{ opacity: 1 }}
+                        whileHover={{ backgroundColor: '#F9FAFB' }}
+                        style={{ background: '#FFFBEB' }}
+                      >
+                        <td style={styles.td}>
+                          <span style={{ fontFamily: 'monospace', fontSize: '12px', color: '#6B7280' }}>
+                            {order.id.slice(0, 8)}...
+                          </span>
+                        </td>
+                        <td style={styles.td}>{getUserName(order.user_id)}</td>
+                        <td style={styles.td}>₹{order.total}</td>
+                        <td style={styles.td}>{new Date(order.delivery_date).toLocaleDateString()}</td>
+                        <td style={styles.td}>
+                          <span style={styles.badge('#FEE2E2', '#991B1B')}>
+                            Payment Pending
+                          </span>
+                        </td>
+                        <td style={styles.td}>
+                          <motion.button 
+                            whileHover={{ scale: 0.95 }} 
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => updatePaymentStatus(order.id, 'paid')} 
+                            style={styles.button('#D1FAE5', '#065F46', '#A7F3D0')}
+                          >
+                            ✅ Confirm Payment
+                          </motion.button>
+                        </td>
+                      </motion.tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -1054,6 +1357,39 @@ const AdminPanel = ({ devices, addDevice, updateDevice, deleteDevice, user }) =>
               </div>
 
               <div style={{ ...styles.tableCard, marginTop: '20px' }}>
+                <h3 style={styles.sectionTitle}>💳 Payment Method Distribution</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                  <motion.div 
+                    style={{ padding: '16px', background: '#F9FAFB', borderRadius: '12px' }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <div style={{ fontSize: '24px', marginBottom: '8px' }}>💳 Online</div>
+                    <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#1E40AF' }}>
+                      {orders.filter(o => o.payment_method === 'online').length}
+                    </div>
+                    <div style={{ fontSize: '14px', color: '#6B7280' }}>
+                      ₹{orders.filter(o => o.payment_method === 'online').reduce((sum, o) => sum + parseFloat(o.total || 0), 0).toFixed(0)}
+                    </div>
+                  </motion.div>
+                  <motion.div 
+                    style={{ padding: '16px', background: '#F9FAFB', borderRadius: '12px' }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                  >
+                    <div style={{ fontSize: '24px', marginBottom: '8px' }}>💵 COD</div>
+                    <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#92400E' }}>
+                      {orders.filter(o => o.payment_method === 'cod').length}
+                    </div>
+                    <div style={{ fontSize: '14px', color: '#6B7280' }}>
+                      ₹{orders.filter(o => o.payment_method === 'cod').reduce((sum, o) => sum + parseFloat(o.total || 0), 0).toFixed(0)}
+                    </div>
+                  </motion.div>
+                </div>
+              </div>
+
+              <div style={{ ...styles.tableCard, marginTop: '20px' }}>
                 <h3 style={styles.sectionTitle}>📝 Recent Activity</h3>
                 {orders.slice(0, 5).map((order, index) => (
                   <motion.div 
@@ -1064,7 +1400,11 @@ const AdminPanel = ({ devices, addDevice, updateDevice, deleteDevice, user }) =>
                     transition={{ delay: index * 0.1 }}
                   >
                     <div><strong>{getUserName(order.user_id)}</strong> placed an order</div>
-                    <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>₹{order.total} • {new Date(order.created_at).toLocaleString()}</div>
+                    <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>
+                      ₹{order.total} • {order.payment_method === 'online' ? '💳 Online' : '💵 COD'} • 
+                      {order.payment_status === 'paid' ? '✅ Paid' : '⏳ Pending'} • 
+                      {new Date(order.created_at).toLocaleString()}
+                    </div>
                   </motion.div>
                 ))}
               </div>
