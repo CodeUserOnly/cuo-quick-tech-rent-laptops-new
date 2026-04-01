@@ -199,23 +199,22 @@ const CheckoutPage = ({ cart, user, createOrder, clearCart }) => {
       const orderData = {
         user_id: user.id,
         total: finalTotal,
-        delivery_address: deliveryAddress,
+        delivery_address: JSON.stringify(deliveryAddress),
         delivery_date: deliveryDate,
         return_date: returnDate,
         rental_days: rentalDays,
+        status: 'confirmed',
+        payment_method: 'cod', // Set payment method to COD
+        payment_status: 'pending', // Set payment status to pending
         items: cart.map(item => ({
           device_id: item.id,
           rental_duration: rentalDays,
           price: item.price,
-          total_price: item.price * rentalDays,
-          name: item.name
-        })),
-        payment_method: 'cod',
-        payment_status: 'pending',
-        order_status: 'confirmed',
-        created_at: new Date().toISOString()
+          total_price: item.price * rentalDays
+        }))
       };
 
+      console.log('Creating COD order:', orderData);
       await createOrder(orderData);
       clearCart();
       navigate('/dashboard', { state: { orderSuccess: true } });
@@ -234,25 +233,25 @@ const CheckoutPage = ({ cart, user, createOrder, clearCart }) => {
       const orderData = {
         user_id: user.id,
         total: finalTotal,
-        delivery_address: deliveryAddress,
+        delivery_address: JSON.stringify(deliveryAddress),
         delivery_date: deliveryDate,
         return_date: returnDate,
         rental_days: rentalDays,
+        status: 'confirmed',
+        payment_method: 'online', // Set payment method to online
+        payment_status: 'paid', // Set payment status to paid
+        payment_date: new Date().toISOString(),
+        razorpay_order_id: paymentDetails.razorpayOrderId,
+        razorpay_payment_id: paymentDetails.razorpayPaymentId,
         items: cart.map(item => ({
           device_id: item.id,
           rental_duration: rentalDays,
           price: item.price,
-          total_price: item.price * rentalDays,
-          name: item.name
-        })),
-        payment_method: 'razorpay',
-        payment_status: 'completed',
-        order_status: 'confirmed',
-        razorpay_order_id: paymentDetails.razorpayOrderId,
-        razorpay_payment_id: paymentDetails.razorpayPaymentId,
-        created_at: new Date().toISOString()
+          total_price: item.price * rentalDays
+        }))
       };
 
+      console.log('Creating Online Payment order:', orderData);
       await createOrder(orderData);
       clearCart();
       navigate('/dashboard', { 
@@ -279,7 +278,7 @@ const CheckoutPage = ({ cart, user, createOrder, clearCart }) => {
     return true;
   };
 
-  // Fixed styles - no mixing of border shorthand with individual properties
+  // Fixed styles
   const styles = {
     container: {
       background: 'linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%)',
